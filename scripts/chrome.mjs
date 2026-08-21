@@ -239,8 +239,10 @@ export function sweepStaleCopies(dir) {
  * `profile` should come from claimProfile() whenever anything might run
  * concurrently. `abort` is an optional { aborted } token: set it true and
  * every in-flight shoot rejects promptly instead of waiting out its timeout.
+ * `transparent` makes Chrome paint the default background fully transparent,
+ * so pages that leave their background unpainted come out with real alpha.
  */
-export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE, abort = null) {
+export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE, abort = null, transparent = false) {
   mkdirSync(profile, { recursive: true })
   const target = resolve(out)
   rmSync(target, { force: true })
@@ -256,6 +258,7 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
       '--no-first-run',
       `--user-data-dir=${profile}`,
       '--virtual-time-budget=8000',
+      ...(transparent ? ['--default-background-color=00000000'] : []),
       `--screenshot=${target}`,
       url,
     ],
