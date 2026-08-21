@@ -1,5 +1,5 @@
 // Shared headless-Chrome screenshotter. Zero dependencies.
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -122,11 +122,47 @@ function reclaimStale(lock) {
   return true
 }
 
+/**
+ * Kill Chromes still holding `dir` after their launcher died. A SIGKILLed run
+ * never runs the exit handler that reaps its child, and that orphan keeps
+ * Chrome's per-profile singleton: the slot then looks free — its lock is stale
+ * — but every render on it exits without writing a file.
+ *
+ * Only ever called once this process owns the slot's lock, and that ownership
+ * is the safety argument: a live claimant would still hold the lock, so any
+ * Chrome left on the dir is by definition abandoned. The match must be exact,
+ * not a prefix — `rendercraft-profile` is a prefix of `rendercraft-profile-1`,
+ * whose Chrome may be legitimately alive under another owner.
+ *
+ * POSIX only: `ps` is the portable way to read another process's argv, and
+ * Windows keeps the "another instance is using profile" error instead.
+ */
+function killProfileHolders(dir) {
+  if (process.platform === 'win32') return
+  let out = ''
+  try {
+    out = spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }).stdout || ''
+  } catch {
+    return
+  }
+  const needle = `--user-data-dir=${dir}`
+  for (const line of out.split('\n')) {
+    const at = line.indexOf(needle)
+    if (at < 0) continue
+    const next = line[at + needle.length]
+    if (next && !/\s/.test(next)) continue // a longer slot name, not ours
+    const pid = Number(line.trim().split(/\s+/)[0])
+    if (!Number.isFinite(pid) || pid <= 0 || pid === process.pid) continue
+    try { process.kill(pid, 'SIGKILL') } catch {}
+  }
+}
+
 /** Claim a warm profile dir for this process. Released on exit. */
 export function claimProfile() {
   for (let i = 0; i < 64; i++) {
     const dir = join(tmpdir(), i === 0 ? 'rendercraft-profile' : `rendercraft-profile-${i}`)
     const lock = `${dir}.lock`
+    let reclaimed = false
     for (let attempt = 0; attempt < 2; attempt++) {
       let taken = false
       try {
@@ -143,9 +179,12 @@ export function claimProfile() {
         if (readOwner(lock) !== process.pid) continue
         claimedLocks.push(lock)
         mkdirSync(dir, { recursive: true })
+        // We hold the lock now, so anything still on this dir is an orphan.
+        if (reclaimed) killProfileHolders(dir)
         return dir
       }
       if (!reclaimStale(lock)) break // owner alive — try the next slot
+      reclaimed = true
     }
   }
   throw new Error('No free rendercraft profile slot (64 in use?) — remove stale rendercraft-profile-*.lock files from the temp dir.')
