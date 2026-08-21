@@ -80,9 +80,10 @@ export function decodePng(buf) {
 
 /* ── Quantization: median cut over the exact color histogram ────────────── */
 
-function buildPalette(frames) {
+function buildPalette(src, maxColors = 256) {
   const hist = new Map() // rgb24 -> count
-  for (const { rgb } of frames) {
+  for (let f = 0; f < src.count; f++) {
+    const { rgb } = src.get(f)
     for (let i = 0; i < rgb.length; i += 3) {
       const key = (rgb[i] << 16) | (rgb[i + 1] << 8) | rgb[i + 2]
       hist.set(key, (hist.get(key) || 0) + 1)
@@ -94,7 +95,7 @@ function buildPalette(frames) {
   }))
 
   let boxes = [colors]
-  while (boxes.length < 256) {
+  while (boxes.length < maxColors) {
     // Split the box with the widest channel range (weighted toward populous boxes).
     let bi = -1, best = 0
     for (let i = 0; i < boxes.length; i++) {
@@ -197,16 +198,62 @@ function lzwEncode(indexed, minCodeSize) {
 
 /* ── GIF89a writer ──────────────────────────────────────────────────────── */
 
+// Ordered 4x4 dither while mapping: breaks up the banding that 256 colors
+// would otherwise print across the themes' soft glows. Deterministic per (x, y),
+// so a pixel whose RGB did not change maps to the same index every frame —
+// which is what makes the delta encoding below effective.
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+
+function quantizeFrame(frame, palette, index, cache) {
+  const { width, height, rgb } = frame
+  const indexed = new Uint8Array(width * height)
+  for (let y = 0, p = 0, i = 0; y < height; y++) {
+    for (let x = 0; x < width; x++, p++, i += 3) {
+      const t = Math.round((BAYER[((y & 3) << 2) | (x & 3)] / 16 - 0.5) * 10)
+      const r = Math.min(255, Math.max(0, rgb[i] + t))
+      const g = Math.min(255, Math.max(0, rgb[i + 1] + t))
+      const b = Math.min(255, Math.max(0, rgb[i + 2] + t))
+      const key = (r << 16) | (g << 8) | b
+      let idx = index.get(key) ?? cache.get(key)
+      if (idx === undefined) {
+        let bestI = 0, bestD = Infinity
+        for (let j = 0; j < palette.length; j++) {
+          const dr = r - palette[j][0], dg = g - palette[j][1], db = b - palette[j][2]
+          const d = dr * dr + dg * dg + db * db
+          if (d < bestD) { bestD = d; bestI = j }
+        }
+        cache.set(key, bestI)
+        idx = bestI
+      }
+      indexed[p] = idx
+    }
+  }
+  return indexed
+}
+
 /**
- * frames: [{ width, height, rgb }] (all same size)
- * delayMs per frame; holdMs replaces the delay on the final frame; loops forever.
+ * frames: [{ width, height, rgb }] (all same size), or a lazy provider
+ * { count, get(i) } so a long animation never holds every decoded frame in
+ * memory at once (get may be called more than once per frame).
+ * delays: per-frame ms array. Without it, delayMs per frame with holdMs on the
+ * final frame. Loops forever.
+ *
+ * Frames after the first are stored as deltas: only the bounding box of changed
+ * pixels is written, with unchanged pixels inside it transparent (disposal
+ * "do not dispose"). At 20+ fps most tween frames touch a few percent of the
+ * canvas, so this is what keeps high frame counts affordable.
  */
-export function encodeGif(frames, { delayMs = 900, holdMs = 2200 } = {}) {
-  const { width, height } = frames[0]
-  const { palette, index } = buildPalette(frames)
+export function encodeGif(frames, { delayMs = 900, holdMs = 2200, delays } = {}) {
+  const src = Array.isArray(frames) ? { count: frames.length, get: (i) => frames[i] } : frames
+  const { width, height } = src.get(0)
+  const useDelta = src.count > 1
+  // Delta frames need one palette slot for "unchanged": cap colors at 255.
+  const { palette, index } = buildPalette(src, useDelta ? 255 : 256)
+  const transparent = palette.length // first unused slot
+  const slots = palette.length + (useDelta ? 1 : 0)
 
   let sizeExp = 0
-  while (1 << (sizeExp + 1) < palette.length) sizeExp++
+  while (1 << (sizeExp + 1) < slots) sizeExp++
   const tableSize = 1 << (sizeExp + 1)
   const minCodeSize = Math.max(2, sizeExp + 1)
 
@@ -226,53 +273,67 @@ export function encodeGif(frames, { delayMs = 900, holdMs = 2200 } = {}) {
   // NETSCAPE2.0: loop forever.
   parts.push(Buffer.from([0x21, 0xff, 0x0b, ...Buffer.from('NETSCAPE2.0', 'ascii'), 3, 1, 0, 0, 0]))
 
-  frames.forEach((frame, fi) => {
-    const cs = Math.round((fi === frames.length - 1 ? holdMs : delayMs) / 10)
-    const gce = Buffer.from([0x21, 0xf9, 4, 0x04, cs & 255, (cs >> 8) & 255, 0, 0]) // disposal 1, no transparency
+  const cache = new Map() // dithered rgb24 -> palette index, shared across frames
+  let prev = null
+
+  for (let fi = 0; fi < src.count; fi++) {
+    const frame = src.get(fi)
+    const ms = delays ? delays[fi] : fi === src.count - 1 ? holdMs : delayMs
+    // Browsers clamp GIF delays below 2cs to 100ms, so 2cs (50fps) is the
+    // floor; the GCE delay field is 16-bit, so 65535cs is the ceiling.
+    const cs = Math.min(65535, Math.max(src.count > 1 ? 2 : 0, Math.round(ms / 10) || 0))
+
+    const indexed = quantizeFrame(frame, palette, index, cache)
+
+    let x0 = 0, y0 = 0, subW = width, subH = height, sub = indexed, hasTrans = false
+    if (prev) {
+      let x1 = -1, y1 = -1
+      x0 = width; y0 = height
+      for (let y = 0; y < height; y++) {
+        const row = y * width
+        for (let x = 0; x < width; x++) {
+          if (indexed[row + x] !== prev[row + x]) {
+            if (x < x0) x0 = x
+            if (x > x1) x1 = x
+            if (y < y0) y0 = y
+            if (y > y1) y1 = y
+          }
+        }
+      }
+      if (x1 < 0) { x0 = 0; y0 = 0; x1 = 0; y1 = 0 } // identical frame: 1px, keeps the timing
+      subW = x1 - x0 + 1
+      subH = y1 - y0 + 1
+      sub = new Uint8Array(subW * subH)
+      for (let y = 0; y < subH; y++) {
+        for (let x = 0; x < subW; x++) {
+          const p = (y0 + y) * width + (x0 + x)
+          sub[y * subW + x] = indexed[p] === prev[p] ? transparent : indexed[p]
+        }
+      }
+      hasTrans = true
+    }
+    prev = indexed
+
+    // Disposal 1 (do not dispose) composites each delta over the last frame.
+    const gce = Buffer.from([0x21, 0xf9, 4, 0x04 | (hasTrans ? 1 : 0), cs & 255, (cs >> 8) & 255, hasTrans ? transparent : 0, 0])
     parts.push(gce)
 
     const desc = Buffer.alloc(10)
     desc[0] = 0x2c
-    desc.writeUInt16LE(width, 5)
-    desc.writeUInt16LE(height, 7)
+    desc.writeUInt16LE(x0, 1)
+    desc.writeUInt16LE(y0, 3)
+    desc.writeUInt16LE(subW, 5)
+    desc.writeUInt16LE(subH, 7)
     parts.push(desc)
 
-    // Ordered 4x4 dither while mapping: breaks up the banding that 256 colors
-    // would otherwise print across the themes' soft glows.
-    const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
-    const indexed = new Uint8Array(width * height)
-    const { rgb } = frame
-    const cache = new Map()
-    for (let y = 0, p = 0, i = 0; y < height; y++) {
-      for (let x = 0; x < width; x++, p++, i += 3) {
-        const t = Math.round((BAYER[((y & 3) << 2) | (x & 3)] / 16 - 0.5) * 10)
-        const r = Math.min(255, Math.max(0, rgb[i] + t))
-        const g = Math.min(255, Math.max(0, rgb[i + 1] + t))
-        const b = Math.min(255, Math.max(0, rgb[i + 2] + t))
-        const key = (r << 16) | (g << 8) | b
-        let idx = index.get(key) ?? cache.get(key)
-        if (idx === undefined) {
-          let bestI = 0, bestD = Infinity
-          for (let j = 0; j < palette.length; j++) {
-            const dr = r - palette[j][0], dg = g - palette[j][1], db = b - palette[j][2]
-            const d = dr * dr + dg * dg + db * db
-            if (d < bestD) { bestD = d; bestI = j }
-          }
-          cache.set(key, bestI)
-          idx = bestI
-        }
-        indexed[p] = idx
-      }
-    }
-
     parts.push(Buffer.from([minCodeSize]))
-    const lzw = lzwEncode(indexed, minCodeSize)
+    const lzw = lzwEncode(sub, minCodeSize)
     for (let off = 0; off < lzw.length; off += 255) {
       const chunk = lzw.subarray(off, off + 255)
       parts.push(Buffer.from([chunk.length]), chunk)
     }
     parts.push(Buffer.from([0]))
-  })
+  }
 
   parts.push(Buffer.from([0x3b]))
   return Buffer.concat(parts)
