@@ -16,6 +16,7 @@
   --glow2: oklch(0.8 0.14 200);
   --glow-opacity: 0.15;
   --dot: oklch(0.95 0.01 260 / 8%);
+  --shadow: 0 32px 80px -20px oklch(0 0 0 / 0.55);
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 }

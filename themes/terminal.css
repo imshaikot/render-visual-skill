@@ -16,6 +16,7 @@
   --glow2: oklch(0.8 0.16 80);
   --glow-opacity: 0.1;
   --dot: oklch(0.9 0.05 150 / 8%);
+  --shadow: 0 32px 80px -20px oklch(0 0 0 / 0.6);
   --font-display: "JetBrains Mono", monospace;
   --font-mono: "JetBrains Mono", monospace;
 }

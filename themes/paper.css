@@ -16,6 +16,7 @@
   --glow2: transparent;
   --glow-opacity: 0;
   --dot: oklch(0.2 0.02 60 / 8%);
+  --shadow: 0 26px 60px -24px oklch(0.32 0.03 60 / 0.25);
   --font-display: "Fraunces", Georgia, serif;
   --font-mono: "IBM Plex Mono", monospace;
 }
