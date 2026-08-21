@@ -14,9 +14,10 @@ Same markup, different theme:
 
 ![diagram, terminal theme](previews/diagram-terminal.png)
 
-And sequence diagrams animate — one frame per step, assembled into a looping GIF **in pure
-Node** (Chrome renders the frames, the built-in zlib decodes them, a hand-rolled GIF89a/LZW
-encoder does the rest; no ffmpeg, still zero dependencies):
+And sequence diagrams animate — each step tweened over several frames (`slide`, `fade`, or
+`pop` presets), assembled into a looping GIF **in pure Node** (Chrome renders the frames in
+parallel, the built-in zlib decodes them, a hand-rolled GIF89a/LZW encoder with
+changed-region deltas does the rest; no ffmpeg, still zero dependencies):
 
 ![animated sequence diagram](previews/sequence-ember.gif)
 

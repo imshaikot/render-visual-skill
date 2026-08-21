@@ -69,24 +69,32 @@ node scripts/render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--th
 
 `templates/sequence.html` marks every message with `data-step="N"`. Opened plain it renders
 the complete diagram (a static figure). Opened with `?step=N` it shows steps below N dimmed,
-step N highlighted, and the rest hidden — one frame of an animation.
+step N highlighted, and the rest hidden. `?f=0..1` is the tween fraction within that step's
+reveal, and `?fx=` picks the reveal preset — so every frame of a smooth animation is still
+just a URL.
 
-`scripts/animate.mjs` renders one frame per step and assembles a looping GIF **in pure
-Node**: Chrome's PNG frames are decoded with the built-in `zlib`, median-cut quantized to a
-shared 256-color palette with ordered dithering, and LZW-encoded by hand. GIF is a 1989
+`scripts/animate.mjs` renders each step as a short tween (several frames at `--fps`, in
+parallel Chrome instances) plus a dwell frame, and assembles a looping GIF **in pure Node**:
+Chrome's PNG frames are decoded with the built-in `zlib`, median-cut quantized to a shared
+palette with ordered dithering, and LZW-encoded by hand. Frames after the first store only
+the changed region (transparent-pixel deltas), so tween frames cost little. GIF is a 1989
 format; it does not need ffmpeg.
 
 ```bash
-node scripts/animate.mjs my-sequence.html my-sequence.gif --theme ember
+node scripts/animate.mjs my-sequence.html my-sequence.gif --theme ember --fx pop
 ```
 
 | Flag | Default | |
 |---|---|---|
-| `--delay` | 900 | ms per step |
+| `--fx` | slide | reveal preset: `slide` (fade + drop-in), `fade`, `pop` (scale overshoot); `data-fx="name"` on any element overrides per element |
+| `--fps` | 25 | tween frame rate; 20/25/50 play back exactly (GIF timing is 10ms units, 50fps is the format's ceiling) |
+| `--transition` | 450 | ms of tween per step reveal; `0` = the old one-frame-per-step look |
+| `--delay` | 900 | ms of dwell on each completed step |
 | `--hold` | 2600 | ms on the final, complete frame before the loop restarts |
+| `--jobs` | 4 | parallel Chrome instances (each keeps its own warm profile) |
 | `--scale` | 1 | GIFs get heavy fast — stay at 1x unless the canvas is small |
 | `--theme` / `--size` | — | as in render.mjs |
-| `--keep-frames` | off | keep the per-step PNGs for inspection |
+| `--keep-frames` | off | keep the per-frame PNGs for inspection |
 
 Rules of thumb: steps are numbered 1..N with no gaps; give activations the step of the call
 that starts them; a GIF that tells the story in under ~8 steps is one people actually watch.

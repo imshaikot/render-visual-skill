@@ -113,12 +113,53 @@
       // ?step=N reveals messages progressively: past (dimmed), now (highlighted),
       // future (hidden). Without the parameter the full diagram renders — so this
       // file is also the static sequence-diagram template.
-      const raw = new URLSearchParams(location.search).get('step')
+      //
+      // ?f=0..1 is the tween fraction within step N's reveal (default 1 =
+      // settled, identical to the stepwise look). ?fx picks the reveal preset —
+      // slide | fade | pop — and data-fx="name" on any [data-step] overrides it
+      // per element. The previous step eases from full strength down to its
+      // dimmed .past state during the tween, whatever the preset.
+      const params = new URLSearchParams(location.search)
+      const raw = params.get('step')
       if (raw !== null) {
         const cur = Number(raw)
+        const f = Math.min(1, Math.max(0, Number(params.get('f') ?? 1)))
+        const fx = params.get('fx') || 'slide'
+        const easeOut = (t) => 1 - Math.pow(1 - t, 3)
+        const FX = {
+          fade: (el, t) => {
+            el.style.opacity = easeOut(t)
+          },
+          slide: (el, t) => {
+            const e = easeOut(t)
+            el.style.opacity = e
+            el.style.transform = `translateY(${8 * (1 - e)}px)`
+          },
+          pop: (el, t) => {
+            const c1 = 1.70158 // easeOutBack: overshoots ~3% then settles
+            const e = 1 + (c1 + 1) * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2)
+            el.style.opacity = Math.min(1, 2 * t)
+            el.style.transformBox = 'fill-box'
+            el.style.transformOrigin = 'center'
+            el.style.transform = `scale(${0.8 + 0.2 * e})`
+          },
+        }
+        const pick = (n) => (n && Object.hasOwn(FX, n) ? FX[n] : null)
         document.querySelectorAll('[data-step]').forEach((el) => {
           const n = Number(el.dataset.step)
           el.classList.add(n < cur ? 'past' : n === cur ? 'now' : 'future')
+          if (f < 1) {
+            if (n === cur) (pick(el.dataset.fx) || pick(fx) || FX.slide)(el, f)
+            else if (n === cur - 1) {
+              const e = easeOut(f)
+              el.style.opacity = 1 - 0.45 * e // → .past's 0.55
+              // the .now glow fades with the dim-out instead of cutting off
+              // at the class flip
+              el.querySelectorAll('path').forEach((p) => {
+                p.style.filter = `drop-shadow(0 0 ${6 * (1 - e)}px currentColor)`
+              })
+            }
+          }
         })
       }
     </script>
