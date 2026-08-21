@@ -27,6 +27,11 @@ every part built from theme tokens, so it restyles with the theme like everythin
 
 ![element library, slate theme](previews/elements-slate.png)
 
+Code snippets get a Carbon-style window — hand-highlighted with a fixed token→accent
+mapping, line numbers, a highlight line, diff rows — in any of the four themes:
+
+![code snippet, ember theme](previews/code-ember.png)
+
 And any figure renders with a real alpha channel via `--transparent` (ground and furniture
 stripped), so it drops onto docs, slides, or pages that bring their own background.
 
@@ -59,6 +64,7 @@ Then just ask Claude Code for a visual: *"make a diagram of our auth flow"*,
 
 ```sh
 node scripts/render.mjs templates/diagram.html figure.png --theme slate
+node scripts/render.mjs templates/code.html snippet.png --theme paper --transparent
 node scripts/animate.mjs templates/sequence.html sequence.gif --theme ember
 ```
 
@@ -69,7 +75,7 @@ The size comes from the template's `<body>`; `--scale` defaults to 2 (retina).
 
 ```
 SKILL.md            the skill: workflow, aesthetic rules, layout discipline
-templates/          diagram (1360×740) · slide (1920×1080) · card (1200×630) · sequence (animatable) · elements (parts sheet)
+templates/          diagram (1360×740) · slide (1920×1080) · card (1200×630) · sequence (animatable) · code (1360×740) · elements (parts sheet)
 themes/             ember · slate · paper · terminal  (design tokens, swappable)
 scripts/            render.mjs (PNG) · animate.mjs (GIF) · gif.mjs (pure-Node GIF89a encoder)
 ```

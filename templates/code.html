@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal. If you copied this file out of
+         the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+
+      /* ── The window. Width is the one knob; height follows the lines. ── */
+      .window {
+        position: relative;
+        width: 1020px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .bar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--ink-faint); opacity: 0.55; }
+      .name { margin-left: 12px; font: 500 13px var(--font-mono); color: var(--ink-dim); }
+      .tag {
+        margin-left: auto;
+        font: 500 11px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--ink-faint);
+        border: 1px solid var(--line); border-radius: 999px;
+        padding: 4px 12px;
+      }
+
+      /* ── Code. One .line div per line; numbers come from the counter. ── */
+      .code {
+        padding: 24px 0 28px;
+        font: 400 16.5px/1.75 var(--font-mono);
+        color: var(--ink);
+        counter-reset: ln;
+      }
+      .line {
+        position: relative;
+        padding: 0 28px 0 70px;
+        white-space: pre;
+        counter-increment: ln;
+      }
+      .line::before {
+        content: counter(ln);
+        position: absolute; left: 0; width: 48px;
+        text-align: right;
+        color: var(--ink-faint); opacity: 0.55;
+        font-size: 14px;
+      }
+      /* an empty <div class="line"></div> still occupies its row */
+      .line:empty::after { content: "\00a0"; }
+
+      /* Token classes — the accent → token-kind mapping is fixed across themes.
+         You are the highlighter: wrap tokens by hand, and only these six kinds. */
+      .kw  { color: var(--a3); }                  /* keywords, control flow */
+      .fn  { color: var(--a1); }                  /* functions and methods */
+      .ty  { color: var(--a1); font-weight: 500; }/* types, classes */
+      .str { color: var(--a2); }                  /* strings */
+      .num { color: var(--a4); }                  /* numbers, booleans, constants */
+      .com { color: var(--ink-faint); font-style: italic; }  /* comments */
+
+      /* Line accents: .hl marks THE line the figure is about (one per figure);
+         .add/.del make a diff — their gutter sign replaces the line number. */
+      .hl  { background: color-mix(in oklab, var(--a1) 10%, transparent); box-shadow: inset 3px 0 0 var(--a1); }
+      .add { background: color-mix(in oklab, var(--a4) 10%, transparent); }
+      .add::before { content: "+"; color: var(--a4); opacity: 1; }
+      .del { background: color-mix(in oklab, var(--a3) 10%, transparent); }
+      .del::before { content: "−"; color: var(--a3); opacity: 1; }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <figure class="window">
+      <header class="bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="name">worker/drain.ts</span>
+        <span class="tag">TypeScript</span>
+      </header>
+      <pre class="code"><code
+><div class="line"><span class="kw">import</span> { <span class="ty">Queue</span>, <span class="kw">type</span> <span class="ty">Job</span> } <span class="kw">from</span> <span class="str">"./queue"</span></div
+><div class="line"></div
+><div class="line"><span class="com">// Retry with backoff; give up after three rounds.</span></div
+><div class="line"><span class="kw">export async function</span> <span class="fn">drain</span>(queue: <span class="ty">Queue</span>, limit = <span class="num">3</span>) {</div
+><div class="line">  <span class="kw">const</span> failed: <span class="ty">Job</span>[] = []</div
+><div class="line">  <span class="kw">for await</span> (<span class="kw">const</span> job <span class="kw">of</span> queue.<span class="fn">take</span>(<span class="num">50</span>)) {</div
+><div class="line">    <span class="kw">try</span> {</div
+><div class="line hl">      <span class="kw">await</span> job.<span class="fn">run</span>({ attempts: limit })</div
+><div class="line">    } <span class="kw">catch</span> (err) {</div
+><div class="line">      failed.<span class="fn">push</span>(job.<span class="fn">retry</span>(err))</div
+><div class="line">    }</div
+><div class="line">  }</div
+><div class="line">  <span class="kw">return</span> { done: queue.size, failed: failed.length }</div
+><div class="line">}</div
+></code></pre>
+    </figure>
+  </body>
+</html>
