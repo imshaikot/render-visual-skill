@@ -57,6 +57,12 @@ node scripts/render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--th
   Medium, and READMEs.
 - **`--theme`** rewrites the stylesheet link to `themes/<name>.css` in a temp copy, so one
   source file renders in any theme.
+- **`--transparent`** renders with a real alpha channel: the body's ground is unpainted and
+  the glow/dots furniture is stripped, so the figure drops onto any surface — docs and
+  slides with their own backgrounds, web pages, video overlays. Composes with `--theme`
+  (pick `paper` over light surroundings, a dark theme over dark). Note `--surface` keeps its
+  8% translucency, so a busy backdrop shows through faintly — a frosted-glass look; if that
+  fights the content, place the PNG on a calmer area.
 - **A missing local stylesheet is fatal, and checked before Chrome launches.** Every color
   is a theme token, so a broken `<link>` does not degrade the render — it empties it, into a
   blank white page that screenshots as a perfect success. If you copy a template out of the
@@ -203,6 +209,7 @@ single file, combine the PNGs into a PDF with whatever the machine has
 Before delivering any image:
 
 - [ ] Rendered and **viewed** — not assumed
+- [ ] Transparent renders: viewed composited over a sample background, not just alone
 - [ ] No text touches a node edge, a line, or the canvas edge
 - [ ] Every line crossing is bridged
 - [ ] One gradient phrase at most; accents used by meaning, not variety

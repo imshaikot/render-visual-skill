@@ -27,6 +27,9 @@ every part built from theme tokens, so it restyles with the theme like everythin
 
 ![element library, slate theme](previews/elements-slate.png)
 
+And any figure renders with a real alpha channel via `--transparent` (ground and furniture
+stripped), so it drops onto docs, slides, or pages that bring their own background.
+
 ## Why HTML instead of a design tool
 
 - **Versioned and diffable** — a figure is a text file; regenerating after a copy change is one command
