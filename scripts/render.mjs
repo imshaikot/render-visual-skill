@@ -42,15 +42,17 @@ if (!size) {
 const [w, h] = size.split('x')
 const scale = opt('scale') ?? '2'
 
+const chrome = findChrome() // before the theme temp copy: it exits when no browser is found
+
 let source = resolve(input)
 const theme = opt('theme')
 if (theme) {
   html = html.replace(/(themes\/)[a-z-]+(\.css)/, `$1${theme}$2`)
   source = join(dirname(resolve(input)), `.render-${process.pid}.html`)
   writeFileSync(source, html)
+  process.on('exit', () => rmSync(source, { force: true })) // covers Ctrl-C too
 }
 
-const chrome = findChrome()
 try {
   await shoot(chrome, pathToFileURL(source).href, output, w, h, scale)
   console.log(`wrote ${output} (${w}x${h} @${scale}x = ${w * scale}x${h * scale})`)
