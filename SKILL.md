@@ -60,8 +60,9 @@ node scripts/render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--th
   `CHROME_PATH` overrides. Any Chromium works (Chrome, Chromium, Brave, Edge).
 - **Chrome often hangs after writing the screenshot.** The renderer waits on the output
   *file*, not the process, then kills it — do the same in any custom pipeline.
-- A profile is reused at the OS temp dir (`rendercraft-profile`); a cold profile costs
-  minutes of first-launch setup.
+- Profiles are reused at the OS temp dir (`rendercraft-profile`, `-1`, `-2`, …), claimed
+  per process via pid lockfiles — concurrent renders never share one (Chrome would refuse)
+  and each slot stays warm; a cold profile costs first-launch setup.
 - Google Fonts load fine headlessly; keep the theme files' `@import` lines.
 
 ## 3. Animated sequence diagrams — no ffmpeg required

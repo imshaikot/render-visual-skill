@@ -13,7 +13,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { findChrome, shoot } from './chrome.mjs'
+import { claimProfile, findChrome, shoot } from './chrome.mjs'
 
 const args = process.argv.slice(2)
 const positional = args.filter((a, i) => !a.startsWith('--') && !(args[i - 1] || '').startsWith('--'))
@@ -54,7 +54,7 @@ if (theme) {
 }
 
 try {
-  await shoot(chrome, pathToFileURL(source).href, output, w, h, scale)
+  await shoot(chrome, pathToFileURL(source).href, output, w, h, scale, claimProfile())
   console.log(`wrote ${output} (${w}x${h} @${scale}x = ${w * scale}x${h * scale})`)
 } catch (err) {
   console.error(err.message)

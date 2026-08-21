@@ -1,6 +1,6 @@
 // Shared headless-Chrome screenshotter. Zero dependencies.
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
+import { closeSync, existsSync, linkSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -29,14 +29,124 @@ export function findChrome() {
   return chrome
 }
 
+/* ── Profile slots ──────────────────────────────────────────────────────── */
+// Chrome enforces a process singleton per profile dir, and a cold profile
+// costs first-launch setup — so profiles live at stable names in the OS temp
+// dir (warm across runs) and are claimed with pid lockfiles, so no two live
+// processes share one however many renders run at once. On a multi-user temp
+// dir the slots are simply per-user: another user's lock reads as held.
+
+const claimedLocks = []
+const liveChildren = new Set()
+
+// Callers that skip claimProfile() get their own dir rather than slot 0's, so
+// an unlocked caller can never collide with a claimed slot.
+const UNCLAIMED_PROFILE = join(tmpdir(), 'rendercraft-profile-unlocked')
+
+const readOwner = (lock) => {
+  try { return Number(readFileSync(lock, 'utf8')) } catch { return NaN }
+}
+
+// EPERM means the pid exists but belongs to another user — alive, not stale.
+function pidAlive(pid) {
+  if (!Number.isFinite(pid) || pid <= 0) return false
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (err) {
+    return err.code === 'EPERM'
+  }
+}
+
+/**
+ * Remove `lock` if its owner is gone; true when the slot is worth retrying.
+ * The stale file is renamed into a private tomb first — rename is atomic, so a
+ * racing reclaimer's rename fails and it backs off instead of deleting the
+ * lock the winner has since written. Nothing here throws: an unremovable lock
+ * (another user's, a sticky temp dir) just sends the scan to the next slot.
+ */
+function reclaimStale(lock) {
+  let pid, st
+  try {
+    st = statSync(lock)
+    pid = readOwner(lock)
+  } catch {
+    return true // vanished under us — the slot may be free now
+  }
+  if (pidAlive(pid)) return false
+  // An empty lock is a claimant caught between open and write; only treat it
+  // as abandoned once it is far too old to be one.
+  if (!Number.isFinite(pid) || pid <= 0) {
+    if (Date.now() - st.mtimeMs < 10_000) return false
+  }
+
+  const tomb = `${lock}.${process.pid}.stale`
+  try {
+    renameSync(lock, tomb)
+  } catch {
+    return false // lost the race, or cannot unlink here
+  }
+  try {
+    // If that rename caught a lock recreated since the probe, put it back.
+    if (statSync(tomb).ino !== st.ino) { try { linkSync(tomb, lock) } catch {} }
+  } catch {}
+  try { rmSync(tomb, { force: true }) } catch {}
+  return true
+}
+
+/** Claim a warm profile dir for this process. Released on exit. */
+export function claimProfile() {
+  for (let i = 0; i < 64; i++) {
+    const dir = join(tmpdir(), i === 0 ? 'rendercraft-profile' : `rendercraft-profile-${i}`)
+    const lock = `${dir}.lock`
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let taken = false
+      try {
+        const fd = openSync(lock, 'wx')
+        writeSync(fd, String(process.pid))
+        closeSync(fd)
+        taken = true
+      } catch (err) {
+        if (err.code !== 'EEXIST') break // unwritable slot — try the next one
+      }
+      if (taken) {
+        // A reclaimer may have judged this lock stale while it was still
+        // empty; whoever's pid is in it now is the slot's real owner.
+        if (readOwner(lock) !== process.pid) continue
+        claimedLocks.push(lock)
+        mkdirSync(dir, { recursive: true })
+        return dir
+      }
+      if (!reclaimStale(lock)) break // owner alive — try the next slot
+    }
+  }
+  throw new Error('No free rendercraft profile slot (64 in use?) — remove stale rendercraft-profile-*.lock files from the temp dir.')
+}
+
+// Kill stray Chromes and release our locks however the process ends — an
+// orphaned headless Chrome would hold its profile's singleton forever. Locks
+// are only removed while we still own them, so a slot reclaimed from us in the
+// meantime keeps its new owner's lock.
+process.on('exit', () => {
+  for (const c of liveChildren) { try { c.kill() } catch {} }
+  for (const l of claimedLocks) {
+    try { if (readOwner(l) === process.pid) rmSync(l, { force: true }) } catch {}
+  }
+})
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => process.exit(130))
+}
+
 /**
  * Screenshot `url` (any file:// or http(s) URL, query strings allowed) to `out`.
  * Chrome often hangs after writing the screenshot, so this waits on the FILE,
  * not the process, then kills it.
+ *
+ * `profile` should come from claimProfile() whenever anything might run
+ * concurrently. `abort` is an optional { aborted } token: set it true and
+ * every in-flight shoot rejects promptly instead of waiting out its timeout.
  */
-export function shoot(chrome, url, out, w, h, scale) {
-  // A reused profile: a fresh one costs minutes of first-launch setup per run.
-  const profile = join(tmpdir(), 'rendercraft-profile')
+export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE, abort = null) {
   mkdirSync(profile, { recursive: true })
   const target = resolve(out)
   rmSync(target, { force: true })
@@ -57,18 +167,32 @@ export function shoot(chrome, url, out, w, h, scale) {
     ],
     { stdio: 'ignore' },
   )
+  liveChildren.add(child)
 
   return new Promise((resolvePromise, reject) => {
     const started = Date.now()
+    let exited = false
+    child.on('error', () => { exited = true })
+    child.on('close', () => { exited = true })
+
+    const finish = (ok, message, settleMs) => {
+      clearInterval(timer)
+      setTimeout(() => {
+        try { child.kill() } catch {}
+        liveChildren.delete(child)
+        ok ? resolvePromise(target) : reject(new Error(message))
+      }, settleMs)
+    }
+
     const timer = setInterval(() => {
-      const done = existsSync(target) && statSync(target).size > 0
-      if (done || Date.now() - started > 120_000) {
-        clearInterval(timer)
-        setTimeout(() => {
-          child.kill()
-          done ? resolvePromise(target) : reject(new Error('Timed out after 120s with no screenshot written.'))
-        }, 1200)
+      // The file check runs first: Chrome may exit right after writing.
+      // The extra 1200ms lets it finish flushing the file it just created.
+      if (existsSync(target) && statSync(target).size > 0) return finish(true, null, 1200)
+      if (abort?.aborted) return finish(false, 'aborted', 0)
+      if (exited && Date.now() - started > 3000) {
+        return finish(false, `Chrome exited without writing ${target} — is another instance using profile ${profile}?`, 0)
       }
+      if (Date.now() - started > 120_000) return finish(false, 'Timed out after 120s with no screenshot written.', 0)
     }, 250)
   })
 }
