@@ -14,6 +14,12 @@ Same markup, different theme:
 
 ![diagram, terminal theme](previews/diagram-terminal.png)
 
+And sequence diagrams animate — one frame per step, assembled into a looping GIF **in pure
+Node** (Chrome renders the frames, the built-in zlib decodes them, a hand-rolled GIF89a/LZW
+encoder does the rest; no ffmpeg, still zero dependencies):
+
+![animated sequence diagram](previews/sequence-ember.gif)
+
 ## Why HTML instead of a design tool
 
 - **Versioned and diffable** — a figure is a text file; regenerating after a copy change is one command
@@ -43,6 +49,7 @@ Then just ask Claude Code for a visual: *"make a diagram of our auth flow"*,
 
 ```sh
 node scripts/render.mjs templates/diagram.html figure.png --theme slate
+node scripts/animate.mjs templates/sequence.html sequence.gif --theme ember
 ```
 
 The size comes from the template's `<body>`; `--scale` defaults to 2 (retina).
@@ -52,9 +59,9 @@ The size comes from the template's `<body>`; `--scale` defaults to 2 (retina).
 
 ```
 SKILL.md            the skill: workflow, aesthetic rules, layout discipline
-templates/          diagram (1360×740) · slide (1920×1080) · card (1200×630)
+templates/          diagram (1360×740) · slide (1920×1080) · card (1200×630) · sequence (animatable)
 themes/             ember · slate · paper · terminal  (design tokens, swappable)
-scripts/render.mjs  zero-dependency renderer, macOS / Linux / Windows
+scripts/            render.mjs (PNG) · animate.mjs (GIF) · gif.mjs (pure-Node GIF89a encoder)
 ```
 
 Adding a theme is one CSS file defining the same tokens. Adding a template is one HTML file

@@ -15,6 +15,7 @@ file instead of hand-picked colors.
 | `templates/diagram.html` | 1360×740 | Architecture and flow figures: nodes, labeled arrows, a return path, a line-crossing bridge |
 | `templates/slide.html` | 1920×1080 | Presentation slides: kicker, headline with a gradient phrase, up to three points, footer |
 | `templates/card.html` | 1200×630 | Social/og cards: mark, headline, one-paragraph pitch, chips, bottom rule |
+| `templates/sequence.html` | 1360×740 | Sequence diagrams: lifelines, calls and returns, activations — static, or animated step by step |
 
 | Theme | Mood | Fonts |
 |---|---|---|
@@ -63,7 +64,34 @@ node scripts/render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--th
   minutes of first-launch setup.
 - Google Fonts load fine headlessly; keep the theme files' `@import` lines.
 
-## 3. The aesthetic rules
+## 3. Animated sequence diagrams — no ffmpeg required
+
+`templates/sequence.html` marks every message with `data-step="N"`. Opened plain it renders
+the complete diagram (a static figure). Opened with `?step=N` it shows steps below N dimmed,
+step N highlighted, and the rest hidden — one frame of an animation.
+
+`scripts/animate.mjs` renders one frame per step and assembles a looping GIF **in pure
+Node**: Chrome's PNG frames are decoded with the built-in `zlib`, median-cut quantized to a
+shared 256-color palette with ordered dithering, and LZW-encoded by hand. GIF is a 1989
+format; it does not need ffmpeg.
+
+```bash
+node scripts/animate.mjs my-sequence.html my-sequence.gif --theme ember
+```
+
+| Flag | Default | |
+|---|---|---|
+| `--delay` | 900 | ms per step |
+| `--hold` | 2600 | ms on the final, complete frame before the loop restarts |
+| `--scale` | 1 | GIFs get heavy fast — stay at 1x unless the canvas is small |
+| `--theme` / `--size` | — | as in render.mjs |
+| `--keep-frames` | off | keep the per-step PNGs for inspection |
+
+Rules of thumb: steps are numbered 1..N with no gaps; give activations the step of the call
+that starts them; a GIF that tells the story in under ~8 steps is one people actually watch.
+GitHub READMEs autoplay GIFs; Medium accepts them as uploads.
+
+## 4. The aesthetic rules
 
 Themes define tokens; templates consume only tokens. Never hard-code a color in a template.
 
@@ -93,7 +121,7 @@ resolve in presentation attributes.
 **Type**: display font for titles only; mono for labels, chips, kickers, footers, and
 anything technical. Kickers are small mono, letter-spaced, uppercase, `--ink-faint`.
 
-## 4. Layout discipline
+## 5. Layout discipline
 
 Check these before rendering, not after:
 
@@ -106,7 +134,7 @@ Check these before rendering, not after:
 - Three points per slide is the ceiling. A diagram that needs more than ~7 nodes is two
   diagrams.
 
-## 5. Presentations
+## 6. Presentations
 
 A deck is one HTML file per slide, numbered so order is explicit:
 
@@ -131,7 +159,7 @@ Keep one theme per deck. The footer's `NN / NN` is manual — update it per slid
 single file, combine the PNGs into a PDF with whatever the machine has
 (`magick out/*.png deck.pdf`, or print the folder from any viewer).
 
-## 6. QA checklist
+## 7. QA checklist
 
 Before delivering any image:
 
@@ -140,4 +168,5 @@ Before delivering any image:
 - [ ] Every line crossing is bridged
 - [ ] One gradient phrase at most; accents used by meaning, not variety
 - [ ] Facts in the copy verified against the project (counts, versions, names)
-- [ ] Output at 2x unless the destination demands otherwise
+- [ ] Output at 2x unless the destination demands otherwise (GIFs: 1x)
+- [ ] Animations: every step present in order, and the final frame holds long enough to read
