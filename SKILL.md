@@ -16,6 +16,7 @@ file instead of hand-picked colors.
 | `templates/slide.html` | 1920×1080 | Presentation slides: kicker, headline with a gradient phrase, up to three points, footer |
 | `templates/card.html` | 1200×630 | Social/og cards: mark, headline, one-paragraph pitch, chips, bottom rule |
 | `templates/sequence.html` | 1360×740 | Sequence diagrams: lifelines, calls and returns, activations — static, or animated step by step |
+| `templates/code.html` | 1360×740 | Code snippets in a themed window (Carbon-style): hand-highlighted tokens, line numbers, a highlight line, diff rows — see §6 |
 | `templates/elements.html` | parts sheet | Copy-paste elements: app/browser/terminal/phone frames, database, server, queue, cloud, router, actor, shield, and a 22-glyph icon set. Never a deliverable — see §5 |
 
 | Theme | Mood | Fonts |
@@ -166,7 +167,38 @@ footprint and which coordinates move together when you stretch it.
 Glyphs drop into a standard node card at `transform="translate(20,30)"`, replacing the
 stock circle glyph; they inherit stroke 1.6 and round caps from `.glyph`.
 
-## 6. Layout discipline
+## 6. Code snippets
+
+`templates/code.html` is a Carbon-style code window — surface, traffic dots, filename, a
+language chip — floating on the themed ground with a `--shadow` (a token, like every other
+color). The window's width is the one layout knob; height follows the lines.
+
+**You are the highlighter.** There is no highlighting library; wrap tokens by hand in
+exactly these six classes, and no others:
+
+| Class | Token kind | Color |
+|---|---|---|
+| `.kw` | keywords, control flow | `--a3` |
+| `.fn` | functions and methods | `--a1` |
+| `.ty` | types, classes | `--a1`, weight 500 |
+| `.str` | strings | `--a2` |
+| `.num` | numbers, booleans, constants | `--a4` |
+| `.com` | comments | `--ink-faint`, italic |
+
+Everything else (variables, properties, punctuation) stays `--ink`. The mapping is fixed
+across themes — don't invent per-language variations.
+
+**Line rows**: one `<div class="line">` per line (empty divs render as blank lines; numbers
+come from a CSS counter). `.hl` marks *the* line the figure is about — one per figure, like
+the gradient phrase. `.add`/`.del` rows make a diff; their gutter sign replaces the line
+number. Escape `&`, `<`, `>` in the code text.
+
+**Discipline**: ~18 lines is the ceiling — a snippet that needs more is two figures. Keep
+2-space indents so long lines survive. Real code beats lorem: verify the snippet compiles
+in your head before shipping it. Rendered with `--transparent`, the window becomes a
+shadowed sticker for embedding anywhere.
+
+## 7. Layout discipline
 
 Check these before rendering, not after:
 
@@ -179,7 +211,7 @@ Check these before rendering, not after:
 - Three points per slide is the ceiling. A diagram that needs more than ~7 nodes is two
   diagrams.
 
-## 7. Presentations
+## 8. Presentations
 
 A deck is one HTML file per slide, numbered so order is explicit:
 
@@ -204,11 +236,12 @@ Keep one theme per deck. The footer's `NN / NN` is manual — update it per slid
 single file, combine the PNGs into a PDF with whatever the machine has
 (`magick out/*.png deck.pdf`, or print the folder from any viewer).
 
-## 8. QA checklist
+## 9. QA checklist
 
 Before delivering any image:
 
 - [ ] Rendered and **viewed** — not assumed
+- [ ] Code figures: highlighting spot-checked token by token; at most one `.hl` line
 - [ ] Transparent renders: viewed composited over a sample background, not just alone
 - [ ] No text touches a node edge, a line, or the canvas edge
 - [ ] Every line crossing is bridged
