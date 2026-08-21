@@ -13,7 +13,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { assertStylesheets, claimProfile, findChrome, shoot } from './chrome.mjs'
+import { assertStylesheets, claimProfile, findChrome, shoot, sweepStaleCopies } from './chrome.mjs'
 
 const args = process.argv.slice(2)
 const positional = args.filter((a, i) => !a.startsWith('--') && !(args[i - 1] || '').startsWith('--'))
@@ -46,6 +46,8 @@ const chrome = findChrome() // before the theme temp copy: it exits when no brow
 
 let source = resolve(input)
 const theme = opt('theme')
+// Clear out copies a hard kill orphaned here on an earlier run.
+sweepStaleCopies(dirname(resolve(input)))
 if (theme) {
   // Tested, not diffed: rewriting ember.css to ember.css is a no-op too.
   const themeLink = /(themes\/)[a-z-]+(\.css)/

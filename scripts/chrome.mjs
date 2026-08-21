@@ -1,6 +1,6 @@
 // Shared headless-Chrome screenshotter. Zero dependencies.
 import { spawn } from 'node:child_process'
-import { closeSync, existsSync, linkSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
+import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -163,6 +163,33 @@ process.on('exit', () => {
 })
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => process.exit(130))
+}
+
+/* ── Stale theme copies ─────────────────────────────────────────────────── */
+
+/**
+ * Delete `.render-<pid>.html` copies in `dir` whose writer is gone. The copy has
+ * to be a sibling of the input — the page's stylesheet link is relative and must
+ * keep resolving — and it is removed on exit, but SIGKILL cannot be trapped, so
+ * one can outlive its run. In a project without a matching .gitignore that
+ * orphan is a hidden file `git add -A` would happily commit, so every run sweeps
+ * the ones it can prove are dead. A live pid's copy is never touched, which is
+ * also what makes this safe for concurrent renders of the same directory; a
+ * recycled pid just means the orphan waits for a later run. Janitorial only —
+ * every error here is swallowed rather than failing a render.
+ */
+export function sweepStaleCopies(dir) {
+  let entries
+  try {
+    entries = readdirSync(dir)
+  } catch {
+    return
+  }
+  for (const name of entries) {
+    const m = /^\.render-(\d+)\.html$/.exec(name)
+    if (!m || pidAlive(Number(m[1]))) continue
+    try { rmSync(join(dir, name), { force: true }) } catch {}
+  }
 }
 
 /**
