@@ -16,6 +16,7 @@ file instead of hand-picked colors.
 | `templates/slide.html` | 1920×1080 | Presentation slides: kicker, headline with a gradient phrase, up to three points, footer |
 | `templates/card.html` | 1200×630 | Social/og cards: mark, headline, one-paragraph pitch, chips, bottom rule |
 | `templates/sequence.html` | 1360×740 | Sequence diagrams: lifelines, calls and returns, activations — static, or animated step by step |
+| `templates/elements.html` | parts sheet | Copy-paste elements: app/browser/terminal/phone frames, database, server, queue, cloud, router, actor, shield, and a 22-glyph icon set. Never a deliverable — see §5 |
 
 | Theme | Mood | Fonts |
 |---|---|---|
@@ -130,7 +131,31 @@ resolve in presentation attributes.
 **Type**: display font for titles only; mono for labels, chips, kickers, footers, and
 anything technical. Kickers are small mono, letter-spaced, uppercase, `--ink-faint`.
 
-## 5. Layout discipline
+## 5. The element library
+
+`templates/elements.html` is a parts sheet, not a canvas: render it only to browse what
+exists. Every part is a self-contained `<g id="el-…">` (shapes and frames) or
+`<g id="g-…">` (28×28 glyphs), anchored at its own top-left, built purely from theme
+tokens — so it matches whatever theme the page links, like everything else here.
+
+To use a part:
+
+1. Copy the group into your figure's `<svg>` and place it with `transform="translate(x,y)"`.
+2. Make sure the page's `<style>` has the `/* element utilities */` block
+   (`.sline .fline .sfaint .ffaint .fground .glyph` plus `s4`/`f4`) — `diagram.html` and
+   `sequence.html` already carry it; copy it from `elements.html` into anything older.
+3. Recolor by swapping the accent class on the part's accent pieces (`s1` → `s2`/`s3`/`s4`).
+   The neutral frame never changes — accents stay semantic (§4).
+
+Frames (`el-window`, `el-browser`, `el-terminal`, `el-phone`) are nodes in their own right:
+caption them with a `.title`/`.sub` pair beneath, or replace the faint skeleton bars with
+real mono `<text>` when the content matters. The comment above each part records its
+footprint and which coordinates move together when you stretch it.
+
+Glyphs drop into a standard node card at `transform="translate(20,30)"`, replacing the
+stock circle glyph; they inherit stroke 1.6 and round caps from `.glyph`.
+
+## 6. Layout discipline
 
 Check these before rendering, not after:
 
@@ -143,7 +168,7 @@ Check these before rendering, not after:
 - Three points per slide is the ceiling. A diagram that needs more than ~7 nodes is two
   diagrams.
 
-## 6. Presentations
+## 7. Presentations
 
 A deck is one HTML file per slide, numbered so order is explicit:
 
@@ -168,7 +193,7 @@ Keep one theme per deck. The footer's `NN / NN` is manual — update it per slid
 single file, combine the PNGs into a PDF with whatever the machine has
 (`magick out/*.png deck.pdf`, or print the folder from any viewer).
 
-## 7. QA checklist
+## 8. QA checklist
 
 Before delivering any image:
 

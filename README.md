@@ -21,6 +21,12 @@ changed-region deltas does the rest; no ffmpeg, still zero dependencies):
 
 ![animated sequence diagram](previews/sequence-ember.gif)
 
+Figures assemble from a copy-paste **element library** — window/browser/terminal/phone
+frames, database, server, queue, cloud, router, actor, shield, and a 22-glyph icon set —
+every part built from theme tokens, so it restyles with the theme like everything else:
+
+![element library, slate theme](previews/elements-slate.png)
+
 ## Why HTML instead of a design tool
 
 - **Versioned and diffable** — a figure is a text file; regenerating after a copy change is one command
@@ -60,7 +66,7 @@ The size comes from the template's `<body>`; `--scale` defaults to 2 (retina).
 
 ```
 SKILL.md            the skill: workflow, aesthetic rules, layout discipline
-templates/          diagram (1360×740) · slide (1920×1080) · card (1200×630) · sequence (animatable)
+templates/          diagram (1360×740) · slide (1920×1080) · card (1200×630) · sequence (animatable) · elements (parts sheet)
 themes/             ember · slate · paper · terminal  (design tokens, swappable)
 scripts/            render.mjs (PNG) · animate.mjs (GIF) · gif.mjs (pure-Node GIF89a encoder)
 ```
