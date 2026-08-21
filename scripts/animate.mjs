@@ -19,7 +19,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { claimProfile, findChrome, shoot } from './chrome.mjs'
+import { assertStylesheets, claimProfile, findChrome, shoot } from './chrome.mjs'
 import { decodePng, encodeGif } from './gif.mjs'
 
 const args = process.argv.slice(2)
@@ -89,9 +89,22 @@ const chrome = findChrome() // before the theme temp copy: it exits when no brow
 let source = resolve(input)
 const theme = opt('theme')
 if (theme) {
-  html = html.replace(/(themes\/)[a-z-]+(\.css)/, `$1${theme}$2`)
+  // Tested, not diffed: rewriting ember.css to ember.css is a no-op too.
+  const themeLink = /(themes\/)[a-z-]+(\.css)/
+  if (!themeLink.test(html)) {
+    console.error(`note: --theme ${theme} matched no themes/<name>.css link — rendering the page's own stylesheet.`)
+  }
+  html = html.replace(themeLink, `$1${theme}$2`)
   source = join(dirname(resolve(input)), `.render-${process.pid}.html`)
   writeFileSync(source, html)
+}
+
+// Before any Chrome starts: one blank frame would poison the whole GIF.
+try {
+  assertStylesheets(html, dirname(resolve(input)))
+} catch (err) {
+  console.error(err.message)
+  process.exit(1)
 }
 
 // One entry per GIF frame: tween frames tick at 1000/fps ms, the settled

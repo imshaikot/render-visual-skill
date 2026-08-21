@@ -57,6 +57,11 @@ node scripts/render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--th
   Medium, and READMEs.
 - **`--theme`** rewrites the stylesheet link to `themes/<name>.css` in a temp copy, so one
   source file renders in any theme.
+- **A missing local stylesheet is fatal, and checked before Chrome launches.** Every color
+  is a theme token, so a broken `<link>` does not degrade the render — it empties it, into a
+  blank white page that screenshots as a perfect success. If you copy a template out of the
+  skill, copy the theme file beside it and link it directly (`href="./slate.css"`); `--theme`
+  only swaps the name inside a `themes/…` path, it cannot repair one.
 - **Chrome discovery**: standard install paths on macOS, Linux, and Windows are probed;
   `CHROME_PATH` overrides. Any Chromium works (Chrome, Chromium, Brave, Edge).
 - **Chrome often hangs after writing the screenshot.** The renderer waits on the output

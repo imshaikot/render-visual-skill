@@ -29,6 +29,34 @@ export function findChrome() {
   return chrome
 }
 
+/* ── Asset preflight ────────────────────────────────────────────────────── */
+
+/**
+ * Throw if a local stylesheet the page links is missing. Every color in a
+ * template is a theme variable, so a 404 here does not degrade the render — it
+ * empties it: an all-white page that Chrome screenshots and reports as a
+ * complete success. It is the one failure this pipeline cannot see, so it is
+ * checked before Chrome ever launches. Remote and data: hrefs are Chrome's
+ * problem, not ours.
+ */
+export function assertStylesheets(html, baseDir) {
+  const missing = []
+  for (const [tag] of html.matchAll(/<link\b[^>]*>/gi)) {
+    if (!/\brel=["']?stylesheet\b/i.test(tag)) continue
+    const href = tag.match(/\bhref=["']([^"']+)["']/i)?.[1]
+    if (!href || /^(https?:)?\/\/|^data:/i.test(href)) continue
+    const file = resolve(baseDir, decodeURIComponent(href.split(/[?#]/)[0]))
+    if (!existsSync(file)) missing.push(`${href}  ->  ${file}`)
+  }
+  if (missing.length) {
+    throw new Error(
+      `Stylesheet not found:\n  ${missing.join('\n  ')}\n` +
+        'Every theme token would be undefined and the render would come out blank. ' +
+        'Copy the theme file beside the HTML and link it directly (href="./slate.css").',
+    )
+  }
+}
+
 /* ── Profile slots ──────────────────────────────────────────────────────── */
 // Chrome enforces a process singleton per profile dir, and a cold profile
 // costs first-launch setup — so profiles live at stable names in the OS temp

@@ -13,7 +13,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { claimProfile, findChrome, shoot } from './chrome.mjs'
+import { assertStylesheets, claimProfile, findChrome, shoot } from './chrome.mjs'
 
 const args = process.argv.slice(2)
 const positional = args.filter((a, i) => !a.startsWith('--') && !(args[i - 1] || '').startsWith('--'))
@@ -47,13 +47,21 @@ const chrome = findChrome() // before the theme temp copy: it exits when no brow
 let source = resolve(input)
 const theme = opt('theme')
 if (theme) {
-  html = html.replace(/(themes\/)[a-z-]+(\.css)/, `$1${theme}$2`)
+  // Tested, not diffed: rewriting ember.css to ember.css is a no-op too.
+  const themeLink = /(themes\/)[a-z-]+(\.css)/
+  if (!themeLink.test(html)) {
+    console.error(`note: --theme ${theme} matched no themes/<name>.css link — rendering the page's own stylesheet.`)
+  }
+  html = html.replace(themeLink, `$1${theme}$2`)
   source = join(dirname(resolve(input)), `.render-${process.pid}.html`)
   writeFileSync(source, html)
   process.on('exit', () => rmSync(source, { force: true })) // covers Ctrl-C too
 }
 
 try {
+  // The temp copy is a sibling of the input, so either way the input's
+  // directory is what the page's relative links resolve against.
+  assertStylesheets(html, dirname(resolve(input)))
   await shoot(chrome, pathToFileURL(source).href, output, w, h, scale, claimProfile())
   console.log(`wrote ${output} (${w}x${h} @${scale}x = ${w * scale}x${h * scale})`)
 } catch (err) {
