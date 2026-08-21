@@ -1,0 +1,21 @@
+/* rendercraft theme: terminal — near-black phosphor. Mono everything. */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+:root {
+  --ground: oklch(0.13 0.008 160);
+  --surface: oklch(0.17 0.012 160 / 92%);
+  --line: oklch(0.9 0.05 150 / 16%);
+  --ink: oklch(0.93 0.03 145);
+  --ink-dim: oklch(0.7 0.06 145);
+  --ink-faint: oklch(0.55 0.05 145);
+  --a1: oklch(0.85 0.21 145);   /* phosphor green — primary */
+  --a2: oklch(0.8 0.16 80);     /* amber — actions */
+  --a3: oklch(0.65 0.2 25);     /* red — external, alerts */
+  --a4: oklch(0.85 0.12 195);   /* cyan — success */
+  --grad: linear-gradient(100deg, oklch(0.93 0.03 145) 4%, oklch(0.85 0.21 145) 60%, oklch(0.8 0.16 80) 96%);
+  --glow1: oklch(0.85 0.21 145);
+  --glow2: oklch(0.8 0.16 80);
+  --glow-opacity: 0.1;
+  --dot: oklch(0.9 0.05 150 / 8%);
+  --font-display: "JetBrains Mono", monospace;
+  --font-mono: "JetBrains Mono", monospace;
+}

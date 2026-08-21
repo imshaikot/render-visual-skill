@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal. -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1200px; height: 630px; overflow: hidden;
+        background: var(--ground);
+        color: var(--ink);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 620px; height: 620px; top: -260px; left: -80px; background: var(--glow1); }
+      .g2 { width: 560px; height: 560px; top: -200px; right: -100px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 78% 70% at 46% 40%, #000 40%, transparent 100%);
+      }
+      .wrap { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 0 84px; }
+      .brandrow { display: flex; align-items: center; gap: 14px; }
+      .mark { width: 40px; height: 40px; border-radius: 11px; border: 2px solid var(--a1); position: relative; }
+      .mark::after { content: ""; position: absolute; inset: 10px; border-radius: 4px; background: var(--a1); }
+      .brandrow span { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+      h1 {
+        margin-top: 40px; font-size: 78px; line-height: 1.02; font-weight: 600;
+        letter-spacing: -0.03em; max-width: 940px;
+      }
+      h1 .accent { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      p { margin-top: 28px; font-size: 27px; line-height: 1.45; color: var(--ink-dim); max-width: 860px; }
+      .chips { margin-top: 44px; display: flex; gap: 12px; }
+      .chip {
+        font-family: var(--font-mono); font-size: 18px;
+        border: 1px solid var(--line); border-radius: 10px;
+        padding: 10px 16px; color: var(--ink-dim);
+      }
+      .chip.on { color: var(--a1); border-color: color-mix(in oklch, var(--a1) 45%, transparent); }
+      .rule { position: absolute; left: 0; right: 0; bottom: 0; height: 5px;
+        background: linear-gradient(90deg, var(--a1), var(--a2)); }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <div class="wrap">
+      <div class="brandrow">
+        <div class="mark"></div>
+        <span>Project name</span>
+      </div>
+
+      <h1>A headline with one<br /><span class="accent">gradient phrase</span></h1>
+
+      <p>
+        One or two lines that say what this actually is, in concrete nouns.
+        Under 160 characters, so it survives as a description too.
+      </p>
+
+      <div class="chips">
+        <div class="chip on">the key fact</div>
+        <div class="chip">feature two</div>
+        <div class="chip">feature three</div>
+        <div class="chip">license</div>
+      </div>
+    </div>
+    <div class="rule"></div>
+  </body>
+</html>

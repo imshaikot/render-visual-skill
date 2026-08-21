@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal. If you copied this file out of
+         the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 20px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <svg width="1360" height="740" viewBox="0 0 1360 740" fill="none">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f1" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f2" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f3" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+      </defs>
+
+      <!-- header: kicker names the figure -->
+      <text class="kicker" x="70" y="58">PROJECT · WHAT THIS DIAGRAM EXPLAINS</text>
+
+      <!-- ═══ main lane: three nodes at y=170, 116 tall ═══ -->
+      <g transform="translate(70, 170)">
+        <rect class="node" width="230" height="116" rx="14" stroke-width="1"/>
+        <circle cx="34" cy="44" r="9" class="s1" stroke-width="1.6"/>
+        <path d="M21 74 c2-11 24-11 26 0" class="s1" stroke-width="1.6" stroke-linecap="round"/>
+        <text class="title" x="62" y="50">Source</text>
+        <text class="sub" x="62" y="76">where it starts</text>
+      </g>
+
+      <g transform="translate(565, 170)">
+        <rect class="node" width="230" height="116" rx="14" stroke-width="1"/>
+        <rect x="20" y="34" width="30" height="24" rx="5" class="s1" stroke-width="1.6"/>
+        <text class="title" x="62" y="50">Process</text>
+        <text class="sub" x="62" y="76">what happens</text>
+      </g>
+
+      <g transform="translate(1060, 170)">
+        <rect class="node" width="230" height="116" rx="14" stroke-width="1"/>
+        <path d="M22 38 l10 8 -10 8 M38 54 h14" class="s1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <text class="title" x="62" y="50">Result</text>
+        <text class="sub" x="62" y="76">where it lands</text>
+      </g>
+
+      <!-- forward arrows (a1). Labels sit centred in the gap, ABOVE the line. -->
+      <g class="s1" stroke-width="1.8">
+        <path d="M300 228 H 561" marker-end="url(#m1)"/>
+        <path d="M795 228 H 1056" marker-end="url(#m1)"/>
+      </g>
+      <text class="lbl f1" x="430" y="212" text-anchor="middle">first step</text>
+      <text class="lbl f1" x="925" y="212" text-anchor="middle">second step</text>
+
+      <!-- return path (a2): drops from Result, runs left, rises into Source -->
+      <path d="M1175 286 V 354 Q 1175 372 1157 372 H 203 Q 185 372 185 354 V 292"
+            class="s2" stroke-width="1.8" marker-end="url(#m2)"/>
+      <text class="lbl f2" x="520" y="360" text-anchor="middle">feedback · what flows back</text>
+
+      <!-- second lane (a3) joining the middle node from below, with a BRIDGE where
+           the vertical crosses the return line: hop from 9px below to 9px above. -->
+      <g transform="translate(70, 520)">
+        <rect class="node" width="286" height="104" rx="14" stroke-width="1"/>
+        <rect x="24" y="42" width="17" height="22" rx="4" class="s3" stroke-width="1.6"/>
+        <path d="M28.5 42 v-7 M36.5 42 v-7 M32.5 64 v9" class="s3" stroke-width="1.6" stroke-linecap="round"/>
+        <text class="title" x="64" y="50">Outside caller</text>
+        <text class="sub" x="64" y="76">another way in</text>
+      </g>
+      <path d="M356 572 H 662 Q 680 572 680 554 V 381 A 9 9 0 0 0 680 363 V 292"
+            class="s3" stroke-width="1.8" marker-end="url(#m3)"/>
+      <text class="lbl f3" x="697" y="470">the same</text>
+      <text class="lbl f3" x="697" y="490">process</text>
+
+      <!-- footnote -->
+      <text class="sub" x="70" y="700" opacity="0.75">One sentence of context that earns its place: what the reader should take away from this figure.</text>
+    </svg>
+  </body>
+</html>
