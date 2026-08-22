@@ -22,11 +22,11 @@ import { fileURLToPath } from 'node:url'
 import { findChrome } from './chrome.mjs'
 
 const SCRIPTS = dirname(fileURLToPath(import.meta.url))
-const REPO = dirname(SCRIPTS)
+const SKILL_DIR = dirname(SCRIPTS)
 const keep = process.argv.includes('--keep')
 const quick = process.argv.includes('--quick')
 
-const root = mkdtempSync(join(tmpdir(), 'rendercraft-selftest-'))
+const root = mkdtempSync(join(tmpdir(), 'render-visual-selftest-'))
 const work = join(root, 'work')   // stands in for a user's project directory
 const iso = join(root, 'tmp')     // the isolated TMPDIR every child renders into
 mkdirSync(work, { recursive: true })
@@ -34,12 +34,12 @@ mkdirSync(iso, { recursive: true })
 
 // A faithful fixture: the real template and the real themes, with the relative
 // link fixed the way SKILL.md tells you to fix it when copying a template out.
-cpSync(join(REPO, 'themes'), join(work, 'themes'), { recursive: true })
+cpSync(join(SKILL_DIR, 'themes'), join(work, 'themes'), { recursive: true })
 writeFileSync(
   join(work, 'fig.html'),
-  readFileSync(join(REPO, 'templates', 'diagram.html'), 'utf8').replace(/\.\.\/themes\//g, 'themes/'),
+  readFileSync(join(SKILL_DIR, 'templates', 'diagram.html'), 'utf8').replace(/\.\.\/themes\//g, 'themes/'),
 )
-cpSync(join(REPO, 'templates', 'sequence.html'), join(work, 'seq.html'))
+cpSync(join(SKILL_DIR, 'templates', 'sequence.html'), join(work, 'seq.html'))
 writeFileSync(
   join(work, 'seq.html'),
   readFileSync(join(work, 'seq.html'), 'utf8').replace(/\.\.\/themes\//g, 'themes/'),
@@ -51,12 +51,23 @@ const renderBg = (...args) => spawn(process.execPath, [join(SCRIPTS, 'render.mjs
 const sha = (f) => createHash('sha256').update(readFileSync(join(work, f))).digest('hex').slice(0, 16)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+// All of this suite's temp state lives under one directory inside the isolated
+// TMPDIR, which is what lets T8 assert "nothing else was created" rather than
+// hunting for known patterns.
+const isoState = join(iso, 'render-visual')
+
 /** Chrome processes holding one of THIS suite's profile slots. */
 const isoChromes = () => {
   const out = spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }).stdout || ''
-  return out.split('\n').filter((l) => l.includes(`--user-data-dir=${iso}/rendercraft-profile`))
+  return out.split('\n').filter((l) => l.includes(`--user-data-dir=${isoState}/profile`))
 }
-const isoTemp = (re) => readdirSync(iso).filter((n) => re.test(n))
+const ls = (dir, re) => {
+  try { return readdirSync(dir).filter((n) => re.test(n)) } catch { return [] }
+}
+/** Entries under the suite's state root. */
+const isoTemp = (re) => ls(isoState, re)
+/** Entries at the top level of the isolated TMPDIR — should only ever be our root. */
+const isoTop = (re) => ls(iso, re)
 
 /**
  * SIGKILL anything still on this suite's profiles. A failing run is exactly the
@@ -74,7 +85,9 @@ process.on('exit', () => {
   if (!keep) rmSync(root, { recursive: true, force: true })
 })
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => process.exit(130))
-const strays = () => readdirSync(work).filter((n) => /^\.render-\d+\.html$/.test(n))
+// A hard kill's litter is now a work dir in the temp root, plus anything an
+// older version left beside the input.
+const strays = () => [...isoTemp(/^work-\d+$/), ...ls(work, /^\.render-\d+\.html$/)]
 
 /** Poll until `pred()` is true, or give up. Keeps the timing tests honest. */
 async function until(pred, ms = 20_000) {
@@ -158,7 +171,7 @@ await test('an unowned Chrome on a slot is reaped, not tripped over', async () =
   // interrupt a render at exactly the wrong moment, put the machine straight
   // into the state a bad interrupt leaves behind — a live Chrome holding slot
   // 0's profile with no lock claiming it — and require the pipeline to cope.
-  const slot0 = join(iso, 'rendercraft-profile')
+  const slot0 = join(isoState, 'profile')
   assert(!existsSync(`${slot0}.lock`), 'slot 0 was still claimed; an earlier test did not clean up')
   const orphan = spawn(findChrome(),
     ['--headless=new', '--disable-gpu', '--no-first-run', `--user-data-dir=${slot0}`, 'about:blank'],
@@ -228,14 +241,14 @@ if (!quick) {
     assert(r.status === 0, `exit ${r.status}: ${r.stderr.trim()}`)
     const gif = readFileSync(join(work, 'anim.gif'))
     assert(gif.subarray(0, 6).toString('ascii') === 'GIF89a', 'not a GIF89a')
-    assert(isoTemp(/^rendercraft-frames-/).length === 0, 'frame directory left behind')
+    assert(isoTemp(/^frames-/).length === 0, 'frame directory left behind')
   })
 }
 
 await test('temp dir is left clean', async () => {
   const locks = isoTemp(/\.lock$/)
   const tombs = isoTemp(/\.stale$/)
-  const frames = isoTemp(/^rendercraft-frames-/)
+  const frames = isoTemp(/^frames-/)
   assert(locks.length === 0, `locks left: ${locks.join(', ')}`)
   assert(tombs.length === 0, `rename tombs left: ${tombs.join(', ')}`)
   assert(frames.length === 0, `frame dirs left: ${frames.join(', ')}`)

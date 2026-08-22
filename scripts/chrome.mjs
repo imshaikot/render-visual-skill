@@ -1,12 +1,19 @@
 // Shared headless-Chrome screenshotter. Zero dependencies.
 import { spawn, spawnSync } from 'node:child_process'
-import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
+import { accessSync, closeSync, constants, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { delimiter, dirname, join, resolve } from 'node:path'
 import { decodePng } from './gif.mjs'
 
+// Ordered by preference: Chrome first because it is the most-tested engine here.
+// CHROME_PATH is handled separately in findChrome — it is an override, and an
+// override that silently falls through to a different browser is not one.
+//
+// Note on Linux: since 20.04 both /usr/bin/chromium-browser and /snap/bin/chromium
+// are usually snap-confined, and a strictly-confined snap gets a private /tmp —
+// so it cannot see the profile and screenshot paths written to the host's temp
+// dir. Prefer a deb/rpm Chrome or Brave there, or set CHROME_PATH.
 const CANDIDATES = [
-  process.env.CHROME_PATH,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
   '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
@@ -15,16 +22,73 @@ const CANDIDATES = [
   '/usr/bin/google-chrome-stable',
   '/usr/bin/chromium',
   '/usr/bin/chromium-browser',
+  '/usr/bin/brave-browser',
+  '/usr/bin/microsoft-edge',
+  '/usr/bin/microsoft-edge-stable',
   '/snap/bin/chromium',
+  `${process.env.LOCALAPPDATA ?? ''}\\Google\\Chrome\\Application\\chrome.exe`,
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-].filter(Boolean)
+  'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
+].filter((p) => p && !p.startsWith('\\'))
 
-export function findChrome() {
-  const chrome = CANDIDATES.find((p) => existsSync(p))
+// Names to look for on PATH, which is how a Chromium installed anywhere unusual
+// — a distro that packages it elsewhere, a Nix or Homebrew prefix, a container
+// image — gets found without the user having to discover CHROME_PATH first.
+const PATH_NAMES = process.platform === 'win32'
+  ? ['chrome.exe', 'msedge.exe', 'brave.exe', 'chromium.exe']
+  : ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'brave-browser', 'microsoft-edge', 'microsoft-edge-stable']
+
+const runnable = (p) => {
+  try {
+    accessSync(p, constants.X_OK)
+    return statSync(p).isFile()
+  } catch {
+    return false
+  }
+}
+
+function searchPath() {
+  const dirs = (process.env.PATH || '').split(delimiter).filter(Boolean)
+  for (const dir of dirs) {
+    for (const name of PATH_NAMES) {
+      const full = join(dir, name)
+      if (runnable(full)) return full
+    }
+  }
+  return null
+}
+
+/**
+ * Locate a Chromium-based browser, or explain why there isn't one.
+ *
+ * `required: false` is for the janitorial tools, which must keep working on a
+ * machine with no browser at all — cleaning up after Chrome should never depend
+ * on Chrome still being installed.
+ */
+export function findChrome({ required = true } = {}) {
+  // An explicitly set CHROME_PATH is an instruction, not a hint. Falling through
+  // to a different browser when it does not resolve means the user asked for one
+  // engine and silently got another.
+  const explicit = process.env.CHROME_PATH
+  if (explicit) {
+    if (runnable(explicit)) return explicit
+    const why = existsSync(explicit) ? 'is not an executable file' : 'does not exist'
+    if (!required) return null
+    console.error(`CHROME_PATH=${explicit} ${why}.`)
+    process.exit(1)
+  }
+
+  const chrome = CANDIDATES.find(runnable) ?? searchPath()
   if (!chrome) {
-    console.error('No Chromium browser found. Set CHROME_PATH to one and re-run.')
+    if (!required) return null
+    console.error(
+      'No Chromium-based browser found (looked in the standard install paths and on PATH).\n' +
+        '  Install Chrome, Chromium, Brave or Edge, or set CHROME_PATH to one.\n' +
+        '  Without root: npx @puppeteer/browsers install chrome@stable',
+    )
     process.exit(1)
   }
   return chrome
@@ -90,7 +154,7 @@ export function makeWorkDir() {
 
 // Callers that skip claimProfile() get their own dir rather than slot 0's, so
 // an unlocked caller can never collide with a claimed slot.
-const UNCLAIMED_PROFILE = join(tmpdir(), 'rendercraft-profile-unlocked')
+const UNCLAIMED_PROFILE = join(TEMP_ROOT, 'profile-unlocked')
 
 const readOwner = (lock) => {
   try { return Number(readFileSync(lock, 'utf8')) } catch { return NaN }
@@ -180,8 +244,9 @@ function killProfileHolders(dir) {
 
 /** Claim a warm profile dir for this process. Released on exit. */
 export function claimProfile() {
+  mkdirSync(TEMP_ROOT, { recursive: true })
   for (let i = 0; i < 64; i++) {
-    const dir = join(tmpdir(), i === 0 ? 'rendercraft-profile' : `rendercraft-profile-${i}`)
+    const dir = join(TEMP_ROOT, i === 0 ? 'profile' : `profile-${i}`)
     const lock = `${dir}.lock`
     for (let attempt = 0; attempt < 2; attempt++) {
       let taken = false
@@ -206,12 +271,42 @@ export function claimProfile() {
         // a *fresh* lock over a still-held profile — and every render on that
         // slot failed until someone killed the orphan by hand.
         killProfileHolders(dir)
+        // Now that nothing is running on this slot, the scratch directory its
+        // last Chrome created is garbage — see reapSingleton.
+        reapSingleton(dir)
         return dir
       }
       if (!reclaimStale(lock)) break // owner alive — try the next slot
     }
   }
-  throw new Error('No free rendercraft profile slot (64 in use?) — remove stale rendercraft-profile-*.lock files from the temp dir.')
+  throw new Error(`No free profile slot (64 in use?) — remove stale profile-*.lock files from ${TEMP_ROOT}.`)
+}
+
+/**
+ * Delete the `com.google.Chrome.XXXXXX` scratch directory this profile's last
+ * Chrome created.
+ *
+ * Chrome removes it on a graceful shutdown, but this pipeline kills with
+ * SIGKILL — the only signal that reliably ends a Chrome wedged in startup — so
+ * every render used to leave one behind: 501 of them accumulated on the author's
+ * machine before anyone noticed, because they match none of this module's
+ * patterns.
+ *
+ * They cannot be globbed away: the user's own browser has one too, and deleting
+ * a live singleton breaks it. But the profile names its own, as a symlink —
+ * `<profile>/SingletonSocket -> <TMPDIR>/com.google.Chrome.XXXXXX/SingletonSocket`
+ * — so the directory is derivable rather than guessed. Called only where the
+ * caller holds the lock and has just killed anything still on the slot, so
+ * whatever it names is provably finished with.
+ */
+function reapSingleton(profileDir) {
+  try {
+    const target = readlinkSync(join(profileDir, 'SingletonSocket'))
+    const scratch = dirname(target)
+    if (/[\\/]com\.google\.Chrome\.[A-Za-z0-9]+$/.test(scratch)) {
+      rmSync(scratch, { recursive: true, force: true })
+    }
+  } catch {} // no socket, not a symlink, already gone — all fine
 }
 
 // Kill stray Chromes and release our locks however the process ends — an
@@ -225,7 +320,14 @@ process.on('exit', () => {
   // holding its profile's singleton. That orphan is what wedges later renders.
   for (const c of liveChildren) { try { c.kill('SIGKILL') } catch {} }
   for (const l of claimedLocks) {
-    try { if (readOwner(l) === process.pid) rmSync(l, { force: true }) } catch {}
+    try {
+      if (readOwner(l) !== process.pid) continue
+      // Still holding the lock, and every child above is dead, so this slot's
+      // Chrome scratch dir is finished with. Reaping it here as well as at claim
+      // time is what keeps a clean run from leaving even one behind.
+      reapSingleton(l.slice(0, -'.lock'.length))
+      rmSync(l, { force: true })
+    } catch {}
   }
 })
 for (const sig of ['SIGINT', 'SIGTERM']) {
@@ -324,6 +426,11 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
       setTimeout(() => {
         try { child.kill('SIGKILL') } catch {} // SIGTERM is swallowed mid-startup
         liveChildren.delete(child)
+        // Every launch gets its own scratch dir and relinks the profile's
+        // SingletonSocket at it, so the previous one becomes unreachable the
+        // moment the next Chrome starts. Reaping per shot rather than per claim
+        // is what keeps a 60-frame animation from leaving 60 directories behind.
+        reapSingleton(profile)
         ok ? resolvePromise(target) : reject(err)
       }, settleMs)
     }
@@ -348,15 +455,24 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
 
 /* ── Deterministic preflight ────────────────────────────────────────────── */
 
-const SLOT_RE = /^rendercraft-profile(-\d+)?$/
-const LOCK_RE = /^rendercraft-profile(-\d+)?\.lock$/
-const TOMB_RE = /^rendercraft-profile(-\d+)?\.lock\.(\d+)\.stale$/
-const FRAMES_RE = /^rendercraft-frames-(\d+)-/
+const SLOT_RE = /^profile(-\d+)?$/
+const LOCK_RE = /^profile(-\d+)?\.lock$/
+const TOMB_RE = /^profile(-\d+)?\.lock\.(\d+)\.stale$/
+const FRAMES_RE = /^frames-(\d+)-/
+const WORK_RE = /^work-(\d+)$/
+
+// Everything this pipeline wrote before the state was consolidated under
+// TEMP_ROOT, still loose in the shared temp dir of anyone upgrading. Swept once,
+// under the same liveness rules. Remove after v1.2.
+const LEGACY_SLOT_RE = /^rendercraft-profile(-\d+)?$/
+const LEGACY_LOCK_RE = /^rendercraft-profile(-\d+)?\.lock(\.(\d+)\.stale)?$/
+const LEGACY_FRAMES_RE = /^rendercraft-frames-(?:(\d+)-)?/
 
 /**
- * Put the temp dir into a known state before a run: kill every rendercraft
- * Chrome whose slot has no live claimant, then clear what a hard kill leaves
- * behind — stale locks, rename tombs, frame dirs.
+ * Put the temp dir into a known state before a run: kill every Chrome of ours
+ * whose slot has no live claimant, then clear what a hard kill leaves behind —
+ * stale locks, rename tombs, frame dirs, work dirs, and the scratch directories
+ * Chrome itself abandons.
  *
  * Safe to call while other renders are in flight, and that is the point: a slot
  * whose lock is held by a live pid is never touched, so the only Chromes killed
@@ -365,8 +481,8 @@ const FRAMES_RE = /^rendercraft-frames-(\d+)-/
  * whole function is janitorial and never throws.
  */
 export function reapOrphans() {
-  const report = { chromes: [], locks: [], frames: [] }
-  const base = join(tmpdir(), 'rendercraft-profile')
+  const report = { chromes: [], locks: [], frames: [], legacy: [] }
+  const base = join(TEMP_ROOT, 'profile')
 
   if (process.platform !== 'win32') {
     let out = ''
@@ -375,46 +491,72 @@ export function reapOrphans() {
     } catch {}
     for (const line of out.split('\n')) {
       const dir = line.match(/--user-data-dir=(\S+)/)?.[1]
-      if (!dir || !SLOT_RE.test(dir.split(/[\\/]/).pop() || '')) continue
-      if (dir !== base && !dir.startsWith(`${base}-`)) continue // another tree's temp dir
+      if (!dir) continue
+      const leaf = dir.split(/[\\/]/).pop() || ''
+      if (!SLOT_RE.test(leaf) && !LEGACY_SLOT_RE.test(leaf)) continue
+      // Ours only: a slot under our root, or a legacy flat name in this temp dir.
+      if (!dir.startsWith(base) && !dir.startsWith(join(tmpdir(), 'rendercraft-profile'))) continue
       if (pidAlive(readOwner(`${dir}.lock`))) continue // a live render owns this slot
       const pid = Number(line.trim().split(/\s+/)[0])
       if (!Number.isFinite(pid) || pid <= 0 || pid === process.pid) continue
       try { process.kill(pid, 'SIGKILL'); report.chromes.push(pid) } catch {}
+      reapSingleton(dir) // nothing is on the slot now, so its scratch dir is dead
     }
   }
 
-  const dir = tmpdir()
-  let entries = []
-  try { entries = readdirSync(dir) } catch { return report }
-  for (const name of entries) {
-    const full = join(dir, name)
+  // An empty lock is a claimant caught between open and write; only treat it as
+  // abandoned once it is far too old to be one.
+  const lockIsDead = (full) => {
+    const owner = readOwner(full)
+    if (pidAlive(owner)) return false
+    if (!Number.isFinite(owner) || owner <= 0) return Date.now() - statSync(full).mtimeMs >= 10_000
+    return true
+  }
+
+  for (const name of safeReaddir(TEMP_ROOT)) {
+    const full = join(TEMP_ROOT, name)
     try {
       if (LOCK_RE.test(name)) {
-        const owner = readOwner(full)
-        if (pidAlive(owner)) continue
-        // An empty lock is a claimant caught between open and write; only treat
-        // it as abandoned once it is far too old to be one.
-        if (!Number.isFinite(owner) || owner <= 0) {
-          if (Date.now() - statSync(full).mtimeMs < 10_000) continue
-        }
+        if (!lockIsDead(full)) continue
         rmSync(full, { force: true })
         report.locks.push(name)
       } else if (TOMB_RE.test(name)) {
         if (pidAlive(Number(TOMB_RE.exec(name)[2]))) continue
         rmSync(full, { force: true })
         report.locks.push(name)
-      } else if (name.startsWith('rendercraft-frames-')) {
-        const owner = FRAMES_RE.exec(name)?.[1]
-        // Pid-tagged dirs go as soon as their writer is gone. Dirs from before
-        // the tagging carry no owner, so age is all there is to go on.
-        if (owner ? pidAlive(Number(owner)) : Date.now() - statSync(full).mtimeMs < 3_600_000) continue
+      } else if (FRAMES_RE.test(name) || WORK_RE.test(name)) {
+        // Pid-tagged, so a dir goes as soon as its writer is gone.
+        const owner = Number((FRAMES_RE.exec(name) ?? WORK_RE.exec(name))[1])
+        if (pidAlive(owner)) continue
         rmSync(full, { recursive: true, force: true })
         report.frames.push(name)
       }
     } catch {} // an entry we cannot remove is never worth failing a render over
   }
+
+  for (const name of safeReaddir(tmpdir())) {
+    const full = join(tmpdir(), name)
+    try {
+      if (LEGACY_LOCK_RE.test(name)) {
+        const tombPid = LEGACY_LOCK_RE.exec(name)[3]
+        if (tombPid ? pidAlive(Number(tombPid)) : !lockIsDead(full)) continue
+        rmSync(full, { force: true })
+        report.legacy.push(name)
+      } else if (LEGACY_SLOT_RE.test(name) || LEGACY_FRAMES_RE.test(name)) {
+        if (pidAlive(readOwner(`${full}.lock`))) continue
+        const owner = LEGACY_FRAMES_RE.exec(name)?.[1]
+        if (owner && pidAlive(Number(owner))) continue
+        if (LEGACY_SLOT_RE.test(name)) reapSingleton(full)
+        rmSync(full, { recursive: true, force: true })
+        report.legacy.push(name)
+      }
+    } catch {}
+  }
   return report
+}
+
+const safeReaddir = (dir) => {
+  try { return readdirSync(dir) } catch { return [] }
 }
 
 /**
