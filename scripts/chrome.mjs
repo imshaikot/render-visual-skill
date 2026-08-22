@@ -162,7 +162,6 @@ export function claimProfile() {
   for (let i = 0; i < 64; i++) {
     const dir = join(tmpdir(), i === 0 ? 'rendercraft-profile' : `rendercraft-profile-${i}`)
     const lock = `${dir}.lock`
-    let reclaimed = false
     for (let attempt = 0; attempt < 2; attempt++) {
       let taken = false
       try {
@@ -179,12 +178,16 @@ export function claimProfile() {
         if (readOwner(lock) !== process.pid) continue
         claimedLocks.push(lock)
         mkdirSync(dir, { recursive: true })
-        // We hold the lock now, so anything still on this dir is an orphan.
-        if (reclaimed) killProfileHolders(dir)
+        // We hold the lock now, so anything still on this dir is an orphan —
+        // true whether the lock was reclaimed or created fresh. Gating this on
+        // "reclaimed" was the bug: a run stopped by SIGINT/SIGTERM removes its
+        // lock on the way out but leaves its Chrome alive, so the next claim is
+        // a *fresh* lock over a still-held profile — and every render on that
+        // slot failed until someone killed the orphan by hand.
+        killProfileHolders(dir)
         return dir
       }
       if (!reclaimStale(lock)) break // owner alive — try the next slot
-      reclaimed = true
     }
   }
   throw new Error('No free rendercraft profile slot (64 in use?) — remove stale rendercraft-profile-*.lock files from the temp dir.')
@@ -195,7 +198,11 @@ export function claimProfile() {
 // are only removed while we still own them, so a slot reclaimed from us in the
 // meantime keeps its new owner's lock.
 process.on('exit', () => {
-  for (const c of liveChildren) { try { c.kill() } catch {} }
+  // SIGKILL, not the default SIGTERM: headless Chrome installs a SIGTERM
+  // handler that starts a graceful shutdown, and during startup that shutdown
+  // never completes — kill() reports success and the process lives on, still
+  // holding its profile's singleton. That orphan is what wedges later renders.
+  for (const c of liveChildren) { try { c.kill('SIGKILL') } catch {} }
   for (const l of claimedLocks) {
     try { if (readOwner(l) === process.pid) rmSync(l, { force: true }) } catch {}
   }
@@ -291,12 +298,12 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
     child.on('error', () => { exited = true })
     child.on('close', () => { exited = true })
 
-    const finish = (ok, message, settleMs) => {
+    const finish = (ok, err, settleMs) => {
       clearInterval(timer)
       setTimeout(() => {
-        try { child.kill() } catch {}
+        try { child.kill('SIGKILL') } catch {} // SIGTERM is swallowed mid-startup
         liveChildren.delete(child)
-        ok ? resolvePromise(target) : reject(new Error(message))
+        ok ? resolvePromise(target) : reject(err)
       }, settleMs)
     }
 
@@ -304,11 +311,121 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
       // The file check runs first: Chrome may exit right after writing.
       // The extra 1200ms lets it finish flushing the file it just created.
       if (existsSync(target) && statSync(target).size > 0) return finish(true, null, 1200)
-      if (abort?.aborted) return finish(false, 'aborted', 0)
+      if (abort?.aborted) return finish(false, new Error('aborted'), 0)
       if (exited && Date.now() - started > 3000) {
-        return finish(false, `Chrome exited without writing ${target} — is another instance using profile ${profile}?`, 0)
+        // The one failure a different profile can fix, so the only one worth a
+        // retry: Chrome refusing a slot another instance still holds.
+        return finish(false, Object.assign(
+          new Error(`Chrome exited without writing ${target} — is another instance using profile ${profile}?`),
+          { retryable: true },
+        ), 0)
       }
-      if (Date.now() - started > 120_000) return finish(false, 'Timed out after 120s with no screenshot written.', 0)
+      if (Date.now() - started > 120_000) return finish(false, new Error('Timed out after 120s with no screenshot written.'), 0)
     }, 250)
   })
+}
+
+/* ── Deterministic preflight ────────────────────────────────────────────── */
+
+const SLOT_RE = /^rendercraft-profile(-\d+)?$/
+const LOCK_RE = /^rendercraft-profile(-\d+)?\.lock$/
+const TOMB_RE = /^rendercraft-profile(-\d+)?\.lock\.(\d+)\.stale$/
+const FRAMES_RE = /^rendercraft-frames-(\d+)-/
+
+/**
+ * Put the temp dir into a known state before a run: kill every rendercraft
+ * Chrome whose slot has no live claimant, then clear what a hard kill leaves
+ * behind — stale locks, rename tombs, frame dirs.
+ *
+ * Safe to call while other renders are in flight, and that is the point: a slot
+ * whose lock is held by a live pid is never touched, so the only Chromes killed
+ * are ones no launcher is waiting on. The unlocked fallback profile is skipped
+ * entirely — it has no lock to prove it idle. Returns what it cleaned; the
+ * whole function is janitorial and never throws.
+ */
+export function reapOrphans() {
+  const report = { chromes: [], locks: [], frames: [] }
+  const base = join(tmpdir(), 'rendercraft-profile')
+
+  if (process.platform !== 'win32') {
+    let out = ''
+    try {
+      out = spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }).stdout || ''
+    } catch {}
+    for (const line of out.split('\n')) {
+      const dir = line.match(/--user-data-dir=(\S+)/)?.[1]
+      if (!dir || !SLOT_RE.test(dir.split(/[\\/]/).pop() || '')) continue
+      if (dir !== base && !dir.startsWith(`${base}-`)) continue // another tree's temp dir
+      if (pidAlive(readOwner(`${dir}.lock`))) continue // a live render owns this slot
+      const pid = Number(line.trim().split(/\s+/)[0])
+      if (!Number.isFinite(pid) || pid <= 0 || pid === process.pid) continue
+      try { process.kill(pid, 'SIGKILL'); report.chromes.push(pid) } catch {}
+    }
+  }
+
+  const dir = tmpdir()
+  let entries = []
+  try { entries = readdirSync(dir) } catch { return report }
+  for (const name of entries) {
+    const full = join(dir, name)
+    try {
+      if (LOCK_RE.test(name)) {
+        const owner = readOwner(full)
+        if (pidAlive(owner)) continue
+        // An empty lock is a claimant caught between open and write; only treat
+        // it as abandoned once it is far too old to be one.
+        if (!Number.isFinite(owner) || owner <= 0) {
+          if (Date.now() - statSync(full).mtimeMs < 10_000) continue
+        }
+        rmSync(full, { force: true })
+        report.locks.push(name)
+      } else if (TOMB_RE.test(name)) {
+        if (pidAlive(Number(TOMB_RE.exec(name)[2]))) continue
+        rmSync(full, { force: true })
+        report.locks.push(name)
+      } else if (name.startsWith('rendercraft-frames-')) {
+        const owner = FRAMES_RE.exec(name)?.[1]
+        // Pid-tagged dirs go as soon as their writer is gone. Dirs from before
+        // the tagging carry no owner, so age is all there is to go on.
+        if (owner ? pidAlive(Number(owner)) : Date.now() - statSync(full).mtimeMs < 3_600_000) continue
+        rmSync(full, { recursive: true, force: true })
+        report.frames.push(name)
+      }
+    } catch {} // an entry we cannot remove is never worth failing a render over
+  }
+  return report
+}
+
+/**
+ * shoot() with slot fallback. `slot` is a `{ dir }` holder kept across calls so
+ * a worker reuses one warm profile; on failure the holder is emptied, so the
+ * next attempt claims a different slot — the failed slot's lock is deliberately
+ * held for the rest of the run to keep it out of the rotation. A profile
+ * poisoned by an orphaned Chrome then costs one attempt, not the whole render.
+ * Aborts are never retried.
+ */
+export async function shootResilient(chrome, url, out, w, h, scale, opts = {}) {
+  const { attempts = 3, abort = null, transparent = false, slot = { dir: null } } = opts
+  let last
+  for (let i = 0; i < attempts; i++) {
+    if (abort?.aborted) throw new Error('aborted')
+    if (!slot.dir) {
+      try {
+        slot.dir = claimProfile()
+      } catch (err) {
+        throw last ?? err // out of slots: report the render failure, not the shortage
+      }
+    }
+    try {
+      return await shoot(chrome, url, out, w, h, scale, slot.dir, abort, transparent)
+    } catch (err) {
+      // Anything else — a bad output path, a 120s hang — fails the same way on
+      // every slot. Retrying it just launches Chrome again and multiplies the
+      // wait, which is worse than the original failure.
+      if (abort?.aborted || !err?.retryable) throw err
+      last = err
+      slot.dir = null // rotate off this slot
+    }
+  }
+  throw last
 }

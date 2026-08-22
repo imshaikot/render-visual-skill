@@ -19,7 +19,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { assertStylesheets, claimProfile, findChrome, shoot, sweepStaleCopies } from './chrome.mjs'
+import { assertStylesheets, findChrome, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 import { decodePng, encodeGif } from './gif.mjs'
 
 const args = process.argv.slice(2)
@@ -78,7 +78,13 @@ if (fps <= 0) {
   process.exit(1)
 }
 const transitionMs = num('transition', 450)
-const jobs = Math.max(1, Math.floor(num('jobs', 4)))
+let jobs = Math.max(1, Math.floor(num('jobs', 4)))
+if (jobs > 16) {
+  // Each worker holds a profile slot, and a retry claims another; 64 slots is
+  // the ceiling. More Chromes than cores costs wall-clock anyway.
+  console.error(`note: --jobs ${jobs} clamped to 16.`)
+  jobs = 16
+}
 const fx = opt('fx') ?? 'slide'
 if (!['slide', 'fade', 'pop'].includes(fx)) {
   console.error(`note: --fx ${fx} is not a built-in (slide|fade|pop) — the template decides what it means.`)
@@ -88,8 +94,10 @@ const chrome = findChrome() // before the theme temp copy: it exits when no brow
 
 let source = resolve(input)
 const theme = opt('theme')
-// Clear out copies a hard kill orphaned here on an earlier run.
+// Clear out copies a hard kill orphaned here on an earlier run, and reap any
+// Chrome still holding a profile slot after an interrupted run.
 sweepStaleCopies(dirname(resolve(input)))
+reapOrphans()
 if (theme) {
   // Tested, not diffed: rewriting ember.css to ember.css is a no-op too.
   const themeLink = /(themes\/)[a-z-]+(\.css)/
@@ -124,7 +132,10 @@ for (let step = 1; step <= maxStep; step++) {
   }
 }
 
-const frameDir = mkdtempSync(join(tmpdir(), 'rendercraft-frames-'))
+// Pid-tagged: SIGKILL cannot run the cleanup below, and an untagged dir gives
+// a later run no way to tell an abandoned one from a live one. reapOrphans()
+// removes these as soon as the writing pid is gone.
+const frameDir = mkdtempSync(join(tmpdir(), `rendercraft-frames-${process.pid}-`))
 const files = new Array(plan.length)
 
 // The finally below covers normal completion; this covers Ctrl-C, where
@@ -137,14 +148,17 @@ process.on('exit', () => {
 try {
   let cursor = 0, done = 0
   const abort = { aborted: false } // one failed frame stops the whole pool promptly
-  const worker = async (profile) => {
+  const worker = async () => {
+    // One warm slot per worker for the whole run; shootResilient rotates it
+    // only if a render on it fails.
+    const slot = { dir: null }
     for (;;) {
       const i = cursor++
       if (i >= plan.length || abort.aborted) return
       const { step, f } = plan[i]
       const png = join(frameDir, `frame-${String(i + 1).padStart(3, '0')}-s${step}-f${f.toFixed(2)}.png`)
       try {
-        await shoot(chrome, `${pathToFileURL(source).href}?step=${step}&f=${f.toFixed(4)}&fx=${fx}`, png, w, h, scale, profile, abort)
+        await shootResilient(chrome, `${pathToFileURL(source).href}?step=${step}&f=${f.toFixed(4)}&fx=${fx}`, png, w, h, scale, { abort, slot })
       } catch (err) {
         abort.aborted = true
         throw err
@@ -154,7 +168,7 @@ try {
     }
   }
   const settled = await Promise.allSettled(
-    Array.from({ length: Math.min(jobs, plan.length) }, () => worker(claimProfile())),
+    Array.from({ length: Math.min(jobs, plan.length) }, () => worker()),
   )
   const failure = settled.find((s) => s.status === 'rejected' && s.reason?.message !== 'aborted')
     ?? settled.find((s) => s.status === 'rejected')

@@ -15,7 +15,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { assertStylesheets, claimProfile, findChrome, shoot, sweepStaleCopies } from './chrome.mjs'
+import { assertStylesheets, findChrome, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 
 const args = process.argv.slice(2)
 const BOOL_FLAGS = new Set(['--transparent'])
@@ -53,8 +53,11 @@ const chrome = findChrome() // before the theme temp copy: it exits when no brow
 let source = resolve(input)
 const theme = opt('theme')
 const transparent = args.includes('--transparent')
-// Clear out copies a hard kill orphaned here on an earlier run.
+// Clear out copies a hard kill orphaned here on an earlier run, and put the
+// temp dir into a known state: an orphaned Chrome from an interrupted run holds
+// its profile's singleton, and every render on that slot fails until it is gone.
 sweepStaleCopies(dirname(resolve(input)))
+reapOrphans()
 if (theme) {
   // Tested, not diffed: rewriting ember.css to ember.css is a no-op too.
   const themeLink = /(themes\/)[a-z-]+(\.css)/
@@ -78,7 +81,7 @@ try {
   // The temp copy is a sibling of the input, so either way the input's
   // directory is what the page's relative links resolve against.
   assertStylesheets(html, dirname(resolve(input)))
-  await shoot(chrome, pathToFileURL(source).href, output, w, h, scale, claimProfile(), null, transparent)
+  await shootResilient(chrome, pathToFileURL(source).href, output, w, h, scale, { transparent })
   console.log(`wrote ${output} (${w}x${h} @${scale}x = ${w * scale}x${h * scale}${transparent ? ', alpha' : ''})`)
 } catch (err) {
   console.error(err.message)
