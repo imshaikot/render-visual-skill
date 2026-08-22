@@ -54,6 +54,28 @@ export function resolveTheme(name) {
   return join(THEMES_DIR, `${name}.css`)
 }
 
+/**
+ * The stylesheet link a theme replaces: a local one whose path sits under
+ * `themes/`, or whose bare filename is one of the shipped theme names — which
+ * is what makes the documented "copy the theme beside your HTML and link
+ * ./slate.css" page themeable too.
+ *
+ * Returns the matched tag, or null. A null is fatal at every call site: the old
+ * behaviour was a note on stderr followed by a render in whatever theme the page
+ * happened to link, which is the wrong image at exit 0.
+ */
+export function findThemeLink(html, names = listThemes()) {
+  for (const [tag] of html.matchAll(/<link\b[^>]*>/gi)) {
+    if (!/\brel=["']?stylesheet\b/i.test(tag)) continue
+    const href = tag.match(/\bhref=["']([^"']+)["']/i)?.[1]
+    if (!href || /^(https?:)?\/\/|^data:/i.test(href)) continue
+    const path = href.split(/[?#]/)[0]
+    const bare = path.split('/').pop().replace(/\.css$/i, '')
+    if (/(^|\/)themes\//i.test(path) || names.includes(bare)) return tag
+  }
+  return null
+}
+
 /* ── Argument parsing ───────────────────────────────────────────────────── */
 
 const distance = (a, b) => {

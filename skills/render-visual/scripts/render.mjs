@@ -18,7 +18,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { assertRendered, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
-import { fail, listThemes, parseArgs, readInput } from './cli.mjs'
+import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
 
 const USAGE = 'render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--theme name] [--transparent]'
 const cli = parseArgs({ usage: USAGE, bool: ['transparent'], value: ['size', 'scale', 'theme'] })
@@ -49,25 +49,6 @@ const transparent = cli.flag('transparent')
 // profile's singleton, and every render on that slot fails until it is gone.
 sweepStaleCopies(inputDir)
 reapOrphans()
-
-/**
- * The stylesheet link a theme replaces: a local one whose path sits under
- * `themes/`, or whose bare filename is one of the shipped theme names — which
- * is what makes the documented "copy the theme beside your HTML and link
- * ./slate.css" page themeable too.
- */
-function findThemeLink(source) {
-  const names = listThemes()
-  for (const [tag] of source.matchAll(/<link\b[^>]*>/gi)) {
-    if (!/\brel=["']?stylesheet\b/i.test(tag)) continue
-    const href = tag.match(/\bhref=["']([^"']+)["']/i)?.[1]
-    if (!href || /^(https?:)?\/\/|^data:/i.test(href)) continue
-    const path = href.split(/[?#]/)[0]
-    const bare = path.split('/').pop().replace(/\.css$/i, '')
-    if (/(^|\/)themes\//i.test(path) || names.includes(bare)) return tag
-  }
-  return null
-}
 
 if (theme) {
   const tag = findThemeLink(html)
