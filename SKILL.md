@@ -69,14 +69,46 @@ node scripts/render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--th
   blank white page that screenshots as a perfect success. If you copy a template out of the
   skill, copy the theme file beside it and link it directly (`href="./slate.css"`); `--theme`
   only swaps the name inside a `themes/…` path, it cannot repair one.
+- **A blank render is fatal too.** After the screenshot, the PNG is decoded and rejected
+  if the whole canvas is one flat color — the failure mode a resolved-but-empty stylesheet
+  or content positioned outside the body box produces, which Chrome otherwise reports as a
+  perfect success. The file is left in place so you can look at it.
 - **Chrome discovery**: standard install paths on macOS, Linux, and Windows are probed;
   `CHROME_PATH` overrides. Any Chromium works (Chrome, Chromium, Brave, Edge).
 - **Chrome often hangs after writing the screenshot.** The renderer waits on the output
-  *file*, not the process, then kills it — do the same in any custom pipeline.
+  *file*, not the process, then kills it — with `SIGKILL`, not `SIGTERM`: headless Chrome
+  swallows `SIGTERM` during startup and lives on holding its profile. Do the same in any
+  custom pipeline.
 - Profiles are reused at the OS temp dir (`rendercraft-profile`, `-1`, `-2`, …), claimed
   per process via pid lockfiles — concurrent renders never share one (Chrome would refuse)
-  and each slot stays warm; a cold profile costs first-launch setup.
+  and each slot stays warm; a cold profile costs first-launch setup. Every run reaps
+  Chromes left on an unclaimed slot before it starts, and a render that still hits a bad
+  slot retries on another, so an interrupted run cannot wedge the next one.
+- **`--theme` and `--transparent` write a hidden `.render-<pid>.html` beside the input**
+  (the stylesheet link is relative, so the copy has to be a sibling). It is removed on
+  every exit path except `SIGKILL`, and the next run in that directory sweeps what a
+  `SIGKILL` left. If you render inside a user's repo, add `.render-*.html` to its
+  `.gitignore` — `git add -A` would otherwise commit one.
 - Google Fonts load fine headlessly; keep the theme files' `@import` lines.
+
+### The harness
+
+Two scripts back the guarantees above. Neither is needed for a normal render.
+
+```bash
+node scripts/doctor.mjs            # preflight: reap orphans, clear stale locks, report
+node scripts/doctor.mjs --prune    # also delete idle warm profiles to reclaim disk
+node scripts/selftest.mjs          # ~60s: assert every concurrency and cleanup invariant
+node scripts/selftest.mjs --quick  # ~45s: same, minus the animation test
+```
+
+Reach for `doctor.mjs` when renders fail with *"is another instance using profile"* — that
+is an orphaned Chrome holding a slot, and `--prune` also answers "why is my temp dir
+hundreds of MB". Run `selftest.mjs` after changing anything in `scripts/`: it renders into
+a throwaway `TMPDIR`, so it never touches the machine's warm profiles and can assert that
+it left nothing behind. It covers concurrent renders agreeing byte for byte, overlapping
+`--theme` runs not contaminating each other, interrupted runs leaving no orphan, and both
+blank-render guards.
 
 ## 3. Animated sequence diagrams — no ffmpeg required
 
@@ -249,3 +281,4 @@ Before delivering any image:
 - [ ] Facts in the copy verified against the project (counts, versions, names)
 - [ ] Output at 2x unless the destination demands otherwise (GIFs: 1x)
 - [ ] Animations: every step present in order, and the final frame holds long enough to read
+- [ ] Batch or deck renders: no `.render-*.html` left in the working directory afterwards

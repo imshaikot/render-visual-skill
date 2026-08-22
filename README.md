@@ -71,6 +71,15 @@ node scripts/animate.mjs templates/sequence.html sequence.gif --theme ember
 The size comes from the template's `<body>`; `--scale` defaults to 2 (retina).
 `CHROME_PATH` overrides browser discovery.
 
+Renders are safe to run in parallel — each claims its own Chrome profile via a pid
+lockfile, and every run first reaps Chromes an interrupted run left holding a slot. Two
+scripts back that up:
+
+```sh
+node scripts/doctor.mjs --prune   # reap orphans, clear stale locks, reclaim profile disk
+node scripts/selftest.mjs         # ~60s: assert the concurrency and cleanup invariants
+```
+
 ## What's inside
 
 ```
@@ -78,6 +87,7 @@ SKILL.md            the skill: workflow, aesthetic rules, layout discipline
 templates/          diagram (1360×740) · slide (1920×1080) · card (1200×630) · sequence (animatable) · code (1360×740) · elements (parts sheet)
 themes/             ember · slate · paper · terminal  (design tokens, swappable)
 scripts/            render.mjs (PNG) · animate.mjs (GIF) · gif.mjs (pure-Node GIF89a encoder)
+                    chrome.mjs (profile slots, orphan reaping) · doctor.mjs · selftest.mjs
 ```
 
 Adding a theme is one CSS file defining the same tokens. Adding a template is one HTML file
