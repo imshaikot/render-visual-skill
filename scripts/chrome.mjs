@@ -3,6 +3,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
+import { decodePng } from './gif.mjs'
 
 const CANDIDATES = [
   process.env.CHROME_PATH,
@@ -428,4 +429,32 @@ export async function shootResilient(chrome, url, out, w, h, scale, opts = {}) {
     }
   }
   throw last
+}
+
+/**
+ * Fail if `file` decoded to a near-solid image. The blank render — a stylesheet
+ * that resolved but defined no tokens, content positioned outside the body box
+ * — is the one defect Chrome reports as a complete success, and
+ * assertStylesheets only catches the cause it can see before launch. Sampling
+ * stops at the ninth distinct color, so a real figure costs a millisecond or
+ * two; only a genuinely blank canvas scans the whole grid.
+ */
+export function assertRendered(file) {
+  let rgb
+  try {
+    ;({ rgb } = decodePng(readFileSync(file)))
+  } catch {
+    return // a PNG we cannot decode is not evidence of a bad render
+  }
+  const seen = new Set()
+  const step = Math.max(1, Math.floor(rgb.length / 3 / 20_000)) * 3
+  for (let i = 0; i + 2 < rgb.length; i += step) {
+    seen.add((rgb[i] << 16) | (rgb[i + 1] << 8) | rgb[i + 2])
+    if (seen.size > 8) return
+  }
+  throw new Error(
+    `${file} rendered essentially blank (${seen.size} distinct color${seen.size === 1 ? '' : 's'} across the canvas). ` +
+      'The usual causes are a stylesheet that loaded but defined none of the theme tokens, ' +
+      'or content positioned outside the body box. The file is left in place for inspection.',
+  )
 }

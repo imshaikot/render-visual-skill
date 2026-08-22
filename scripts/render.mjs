@@ -15,7 +15,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { assertStylesheets, findChrome, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
+import { assertRendered, assertStylesheets, findChrome, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 
 const args = process.argv.slice(2)
 const BOOL_FLAGS = new Set(['--transparent'])
@@ -82,6 +82,7 @@ try {
   // directory is what the page's relative links resolve against.
   assertStylesheets(html, dirname(resolve(input)))
   await shootResilient(chrome, pathToFileURL(source).href, output, w, h, scale, { transparent })
+  assertRendered(resolve(output))
   console.log(`wrote ${output} (${w}x${h} @${scale}x = ${w * scale}x${h * scale}${transparent ? ', alpha' : ''})`)
 } catch (err) {
   console.error(err.message)
