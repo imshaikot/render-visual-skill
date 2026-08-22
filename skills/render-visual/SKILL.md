@@ -1,10 +1,13 @@
 ---
-name: rendercraft
-description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with the headless Chromium already on the machine. Four built-in themes (warm dark, cool dark, light editorial, terminal), swappable with a flag. USE FOR: architecture and flow diagrams, slide decks, talk slides, og/social cards, blog and README figures, banners, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), screenshots of real UIs, or photo editing. TRIGGERS: diagram, flow chart, architecture visual, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, render a png, make an image, visual."
-argument-hint: "What to make, e.g. 'a diagram of our auth flow', 'a 6-slide deck from these notes', 'an og card for the repo'"
+name: render-visual
+description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Needs a shell, Node 18+, and a Chromium-based browser. Four built-in themes (warm dark, cool dark, light editorial, terminal), swappable with a flag. USE FOR: architecture and flow diagrams, slide decks, talk slides, og/social cards, blog and README figures, banners, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), screenshots of real UIs, photo editing, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, render a png, make an image, visual."
+license: MIT
+compatibility: "Requires shell command execution, Node 18+, and a local Chromium-based browser (Chrome, Chromium, Brave, or Edge); set CHROME_PATH if it is installed somewhere unusual. Theme fonts load from fonts.googleapis.com, so renders without network access fall back to system fonts. Cannot run where there is no shell or no browser: claude.ai chat, the Skills API, Cowork and cloud sessions, and most CI images."
+metadata:
+  version: "1.0.0"
 ---
 
-# rendercraft — designed PNGs from HTML, no design tool
+# render-visual — designed PNGs from HTML, no design tool
 
 Every image this skill produces is a small HTML/SVG page screenshotted by headless Chrome:
 fully versioned, diffable, regenerable in seconds when the copy changes, and styled by a theme
