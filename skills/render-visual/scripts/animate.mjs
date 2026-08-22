@@ -15,42 +15,27 @@
 // divide 100 (20, 25, 50) play back exactly; 50 is the format's ceiling.
 // --scale defaults to 1 for GIFs — at 2x a 1360x740 animation gets very heavy.
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { assertStylesheets, findChrome, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
+import { TEMP_ROOT, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
+import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
 import { decodePng, encodeGif } from './gif.mjs'
 
-const args = process.argv.slice(2)
-const BOOL_FLAGS = new Set(['--keep-frames'])
-const positional = args.filter((a, i) => {
-  const before = args[i - 1] || ''
-  return !a.startsWith('--') && !(before.startsWith('--') && !BOOL_FLAGS.has(before))
+const USAGE = 'animate.mjs <input.html> <output.gif> [--theme name] [--scale 1] [--size WxH] [--fx slide|fade|pop] [--fps 25] [--transition 450] [--delay 900] [--hold 2600] [--jobs 4] [--keep-frames]'
+const cli = parseArgs({
+  usage: USAGE,
+  bool: ['keep-frames'],
+  value: ['theme', 'scale', 'size', 'fx', 'fps', 'transition', 'delay', 'hold', 'jobs'],
 })
-const opt = (name) => {
-  const i = args.indexOf(`--${name}`)
-  return i >= 0 ? args[i + 1] : undefined
-}
-const flag = (name) => args.includes(`--${name}`)
-const num = (name, def) => {
-  const v = opt(name)
-  if (v === undefined) return def
-  const n = Number(v)
-  if (!Number.isFinite(n) || n < 0) {
-    console.error(`--${name} needs a non-negative number, got "${v}"`)
-    process.exit(1)
-  }
-  return n
-}
+const { opt, flag, num } = cli
 
-const [input, output] = positional
-if (!input || !output) {
-  console.error('usage: animate.mjs <input.html> <output.gif> [--theme name] [--scale 1] [--size WxH] [--fx slide|fade|pop] [--fps 25] [--transition 450] [--delay 900] [--hold 2600] [--jobs 4] [--keep-frames]')
-  process.exit(1)
-}
+const [input, output] = cli.positional
+if (!input || !output) fail('Both an input .html and an output .gif are required.', USAGE)
 
-let html = readFileSync(resolve(input), 'utf8')
+const inputFile = readInput(input)
+const inputDir = dirname(inputFile)
+let html = readFileSync(inputFile, 'utf8')
 
 const steps = [...html.matchAll(/data-step="(\d+)"/g)].map((m) => Number(m[1]))
 const maxStep = steps.length ? Math.max(...steps) : 0
@@ -59,17 +44,14 @@ if (maxStep < 1) {
   process.exit(1)
 }
 
-let size = opt('size')
+let size = cli.size()
 if (!size) {
   const m = html.match(/width:\s*(\d+)px;\s*height:\s*(\d+)px/)
-  if (!m) {
-    console.error('No --size given and no "width: Npx; height: Mpx" found on the input body.')
-    process.exit(1)
-  }
-  size = `${m[1]}x${m[2]}`
+  if (!m) fail('No --size given and no "width: Npx; height: Mpx" found on the input body.', USAGE)
+  size = { w: Number(m[1]), h: Number(m[2]) }
 }
-const [w, h] = size.split('x')
-const scale = opt('scale') ?? '1'
+const { w, h } = size
+const scale = cli.scale('scale', 1)
 const delayMs = num('delay', 900)
 const holdMs = num('hold', 2600)
 const fps = num('fps', 25)
@@ -90,28 +72,39 @@ if (!['slide', 'fade', 'pop'].includes(fx)) {
   console.error(`note: --fx ${fx} is not a built-in (slide|fade|pop) — the template decides what it means.`)
 }
 
-const chrome = findChrome() // before the theme temp copy: it exits when no browser is found
+const chrome = findChrome() // before any copy is written: it exits when no browser is found
 
-let source = resolve(input)
-const theme = opt('theme')
+const theme = cli.theme() // already validated against the shipped set, or fatal
 // Clear out copies a hard kill orphaned here on an earlier run, and reap any
 // Chrome still holding a profile slot after an interrupted run.
-sweepStaleCopies(dirname(resolve(input)))
+sweepStaleCopies(inputDir)
 reapOrphans()
+
+let source = inputFile
+let workDir = null
 if (theme) {
-  // Tested, not diffed: rewriting ember.css to ember.css is a no-op too.
-  const themeLink = /(themes\/)[a-z-]+(\.css)/
-  if (!themeLink.test(html)) {
-    console.error(`note: --theme ${theme} matched no themes/<name>.css link — rendering the page's own stylesheet.`)
+  const tag = findThemeLink(html)
+  if (!tag) {
+    fail(
+      `--theme ${theme.name} found no theme stylesheet to replace in ${input}.\n` +
+        '  A themeable page links either themes/<name>.css or a bare ./<name>.css.\n' +
+        '  Every frame would carry the wrong colours, so this is fatal.',
+    )
   }
-  html = html.replace(themeLink, `$1${theme}$2`)
-  source = join(dirname(resolve(input)), `.render-${process.pid}.html`)
-  writeFileSync(source, html)
+  html = html.replace(tag, `<style>\n${readFileSync(theme.file, 'utf8')}\n</style>`)
+  workDir = makeWorkDir()
+  source = join(workDir, 'page.html')
+  const base = `<base href="${pathToFileURL(inputDir).href}/">`
+  writeFileSync(source, html.replace(/<head([^>]*)>/i, `<head$1>${base}`))
+  // Registered here, not below with the frame-dir cleanup: the stylesheet
+  // preflight that follows can exit, and for as long as this handler sat 30
+  // lines further down that exit left the copy behind.
+  process.on('exit', () => rmSync(workDir, { recursive: true, force: true }))
 }
 
 // Before any Chrome starts: one blank frame would poison the whole GIF.
 try {
-  assertStylesheets(html, dirname(resolve(input)))
+  assertStylesheets(html, inputDir)
 } catch (err) {
   console.error(err.message)
   process.exit(1)
@@ -135,13 +128,14 @@ for (let step = 1; step <= maxStep; step++) {
 // Pid-tagged: SIGKILL cannot run the cleanup below, and an untagged dir gives
 // a later run no way to tell an abandoned one from a live one. reapOrphans()
 // removes these as soon as the writing pid is gone.
-const frameDir = mkdtempSync(join(tmpdir(), `rendercraft-frames-${process.pid}-`))
+mkdirSync(TEMP_ROOT, { recursive: true })
+const frameDir = mkdtempSync(join(TEMP_ROOT, `frames-${process.pid}-`))
 const files = new Array(plan.length)
 
 // The finally below covers normal completion; this covers Ctrl-C, where
-// process.exit skips pending finally blocks.
+// process.exit skips pending finally blocks. The work dir has its own handler,
+// registered the moment it is written.
 process.on('exit', () => {
-  if (theme) rmSync(source, { force: true })
   if (!flag('keep-frames')) rmSync(frameDir, { recursive: true, force: true })
 })
 
@@ -184,6 +178,6 @@ try {
   console.log(`wrote ${output} (${gif.readUInt16LE(6)}x${gif.readUInt16LE(8)}, ${plan.length} frames, ${(gif.length / 1024).toFixed(0)} KB, ${fx} @ ${fps}fps, loops)`)
   if (flag('keep-frames')) console.log(`frames kept in ${frameDir}`)
 } finally {
-  if (theme) rmSync(source, { force: true })
+  if (workDir) rmSync(workDir, { recursive: true, force: true })
   if (!flag('keep-frames')) rmSync(frameDir, { recursive: true, force: true })
 }
