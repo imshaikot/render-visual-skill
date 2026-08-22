@@ -2,7 +2,7 @@
 import { spawn, spawnSync } from 'node:child_process'
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 const CANDIDATES = [
   process.env.CHROME_PATH,
@@ -245,6 +245,14 @@ export function sweepStaleCopies(dir) {
 export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE, abort = null, transparent = false) {
   mkdirSync(profile, { recursive: true })
   const target = resolve(out)
+  // Chrome given an unwritable --screenshot path does not fail — it starts,
+  // writes nothing, and sits there until the 120s timeout. Checked here, before
+  // launch, for the same reason the stylesheet is: the alternative is two
+  // minutes of silence per attempt.
+  const outDir = dirname(target)
+  if (!existsSync(outDir)) {
+    throw new Error(`Output directory does not exist: ${outDir}\nCreate it first (mkdir -p) or write to a path that already exists.`)
+  }
   rmSync(target, { force: true })
 
   const child = spawn(
