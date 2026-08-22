@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal. -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 18px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .life { stroke: var(--line); stroke-dasharray: 4 6; }
+      .act { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — parts copied from templates/elements.html rely on these */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* Step reveal: ?step=N marks each [data-step] as past / now / future. */
+      .future { opacity: 0; }
+      .past { opacity: 0.55; }
+      .now .lbl { font-weight: 500; }
+      .now path { filter: drop-shadow(0 0 6px currentColor); }
+      .msg { transition: opacity 0.2s; }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <svg width="1360" height="740" viewBox="0 0 1360 740" fill="none">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f1" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f2" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+      </defs>
+
+      <text class="kicker" x="70" y="58">PROJECT · WHAT THIS SEQUENCE SHOWS</text>
+
+      <!-- actors: lifeline centers at x = 260, 680, 1100 -->
+      <g transform="translate(170, 96)">
+        <rect class="node" width="180" height="60" rx="12" stroke-width="1"/>
+        <text class="title" x="90" y="30" text-anchor="middle" dominant-baseline="middle">Client</text>
+      </g>
+      <g transform="translate(590, 96)">
+        <rect class="node" width="180" height="60" rx="12" stroke-width="1"/>
+        <text class="title" x="90" y="30" text-anchor="middle" dominant-baseline="middle">API</text>
+      </g>
+      <g transform="translate(1010, 96)">
+        <rect class="node" width="180" height="60" rx="12" stroke-width="1"/>
+        <text class="title" x="90" y="30" text-anchor="middle" dominant-baseline="middle">Worker</text>
+      </g>
+
+      <!-- lifelines -->
+      <path class="life" d="M260 160 V 640" stroke-width="1.2"/>
+      <path class="life" d="M680 160 V 640" stroke-width="1.2"/>
+      <path class="life" d="M1100 160 V 640" stroke-width="1.2"/>
+
+      <!-- activation bars appear with the step that starts them -->
+      <g class="msg" data-step="1"><rect class="act" x="675" y="232" width="10" height="212" rx="3" stroke-width="1"/></g>
+      <g class="msg" data-step="2"><rect class="act" x="1095" y="296" width="10" height="276" rx="3" stroke-width="1"/></g>
+
+      <!-- messages: solid a1 = call, dashed a2 = return. One data-step each. -->
+      <g class="msg" data-step="1">
+        <path class="s1" d="M262 240 H 671" stroke-width="1.8" marker-end="url(#m1)"/>
+        <text class="lbl f1" x="466" y="224" text-anchor="middle">POST /jobs</text>
+      </g>
+      <g class="msg" data-step="2">
+        <path class="s1" d="M687 304 H 1091" stroke-width="1.8" marker-end="url(#m1)"/>
+        <text class="lbl f1" x="889" y="288" text-anchor="middle">enqueue(job)</text>
+      </g>
+      <g class="msg" data-step="3">
+        <path class="s2" d="M1093 368 H 689" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#m2)"/>
+        <text class="lbl f2" x="889" y="352" text-anchor="middle">ack · job id</text>
+      </g>
+      <g class="msg" data-step="4">
+        <path class="s2" d="M673 432 H 264" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#m2)"/>
+        <text class="lbl f2" x="466" y="416" text-anchor="middle">202 accepted</text>
+      </g>
+      <g class="msg" data-step="5">
+        <path class="s1" d="M1107 480 h 64 q 12 0 12 12 v 8 q 0 12 -12 12 h -60" stroke-width="1.8" marker-end="url(#m1)"/>
+        <text class="lbl f1" x="1196" y="470" text-anchor="middle">process</text>
+      </g>
+      <g class="msg" data-step="6">
+        <path class="s2" d="M1097 568 H 266" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#m2)"/>
+        <text class="lbl f2" x="680" y="552" text-anchor="middle">webhook · done</text>
+      </g>
+
+      <text class="sub" x="70" y="700" opacity="0.75">Solid arrows call, dashed arrows answer. One sentence on why this order matters.</text>
+    </svg>
+
+    <script>
+      // ?step=N reveals messages progressively: past (dimmed), now (highlighted),
+      // future (hidden). Without the parameter the full diagram renders — so this
+      // file is also the static sequence-diagram template.
+      //
+      // ?f=0..1 is the tween fraction within step N's reveal (default 1 =
+      // settled, identical to the stepwise look). ?fx picks the reveal preset —
+      // slide | fade | pop — and data-fx="name" on any [data-step] overrides it
+      // per element. The previous step eases from full strength down to its
+      // dimmed .past state during the tween, whatever the preset.
+      const params = new URLSearchParams(location.search)
+      const raw = params.get('step')
+      if (raw !== null) {
+        const cur = Number(raw)
+        const f = Math.min(1, Math.max(0, Number(params.get('f') ?? 1)))
+        const fx = params.get('fx') || 'slide'
+        const easeOut = (t) => 1 - Math.pow(1 - t, 3)
+        const FX = {
+          fade: (el, t) => {
+            el.style.opacity = easeOut(t)
+          },
+          slide: (el, t) => {
+            const e = easeOut(t)
+            el.style.opacity = e
+            el.style.transform = `translateY(${8 * (1 - e)}px)`
+          },
+          pop: (el, t) => {
+            const c1 = 1.70158 // easeOutBack: overshoots ~3% then settles
+            const e = 1 + (c1 + 1) * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2)
+            el.style.opacity = Math.min(1, 2 * t)
+            el.style.transformBox = 'fill-box'
+            el.style.transformOrigin = 'center'
+            el.style.transform = `scale(${0.8 + 0.2 * e})`
+          },
+        }
+        const pick = (n) => (n && Object.hasOwn(FX, n) ? FX[n] : null)
+        document.querySelectorAll('[data-step]').forEach((el) => {
+          const n = Number(el.dataset.step)
+          el.classList.add(n < cur ? 'past' : n === cur ? 'now' : 'future')
+          if (f < 1) {
+            if (n === cur) (pick(el.dataset.fx) || pick(fx) || FX.slide)(el, f)
+            else if (n === cur - 1) {
+              const e = easeOut(f)
+              el.style.opacity = 1 - 0.45 * e // → .past's 0.55
+              // the .now glow fades with the dim-out instead of cutting off
+              // at the class flip
+              el.querySelectorAll('path').forEach((p) => {
+                p.style.filter = `drop-shadow(0 0 ${6 * (1 - e)}px currentColor)`
+              })
+            }
+          }
+        })
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,363 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal. If you copied this file out of
+         the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 940px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 20px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part below relies only on these + the classes above */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PARTS SHEET — not a deliverable. Copy a <g id="el-…"> or <g id="g-…">
+         into your figure's <svg>, position it with transform="translate(x,y)",
+         and recolor by swapping s1 → s2/s3/s4 on its accent parts. Each part is
+         anchored at its own top-left and depends only on the classes in <style>
+         (diagram.html and sequence.html already carry the same set).
+         ══════════════════════════════════════════════════════════════════════ -->
+    <svg width="1360" height="940" viewBox="0 0 1360 940" fill="none">
+
+      <text class="kicker" x="70" y="58">RENDERCRAFT · ELEMENT LIBRARY — FRAMES, SHAPES, GLYPHS</text>
+
+      <text class="sec" x="70" y="108">FRAMES — nodes in their own right: caption with .title/.sub, or swap skeleton bars for real mono text</text>
+
+      <!-- ▸ el-window · app/desktop window · 280×200 · anchor top-left.
+           Stretch: outer rect width, the y=40 bar line, and skeleton widths move together. -->
+      <g id="el-window" transform="translate(70, 124)">
+        <rect class="node" width="280" height="200" rx="14" stroke-width="1"/>
+        <path class="sline" d="M1 40 H279" stroke-width="1"/>
+        <g class="ffaint" opacity="0.55">
+          <circle cx="22" cy="20" r="4.5"/><circle cx="40" cy="20" r="4.5"/><circle cx="58" cy="20" r="4.5"/>
+        </g>
+        <rect class="ffaint" opacity="0.3" x="104" y="15" width="72" height="9" rx="4.5"/>
+        <rect class="ffaint" opacity="0.5" x="24" y="64" width="110" height="10" rx="5"/>
+        <rect class="ffaint" opacity="0.28" x="24" y="92" width="232" height="7" rx="3.5"/>
+        <rect class="ffaint" opacity="0.28" x="24" y="108" width="196" height="7" rx="3.5"/>
+        <rect class="ffaint" opacity="0.28" x="24" y="124" width="214" height="7" rx="3.5"/>
+        <rect class="s1" x="24" y="152" width="80" height="26" rx="13" stroke-width="1.6"/>
+        <rect class="f1" opacity="0.85" x="44" y="162" width="40" height="6" rx="3"/>
+      </g>
+
+      <!-- ▸ el-browser · browser window · 320×200 · anchor top-left.
+           Stretch: outer rect, the y=44 bar line, the URL pill, and panel widths together. -->
+      <g id="el-browser" transform="translate(400, 124)">
+        <rect class="node" width="320" height="200" rx="14" stroke-width="1"/>
+        <path class="sline" d="M1 44 H319" stroke-width="1"/>
+        <g class="ffaint" opacity="0.55">
+          <circle cx="22" cy="22" r="4.5"/><circle cx="40" cy="22" r="4.5"/><circle cx="58" cy="22" r="4.5"/>
+        </g>
+        <rect class="fground sline" x="76" y="11" width="222" height="22" rx="11" stroke-width="1"/>
+        <rect class="ffaint" opacity="0.35" x="90" y="19" width="104" height="6" rx="3"/>
+        <rect class="fline" x="24" y="66" width="272" height="56" rx="8"/>
+        <rect class="fline" x="24" y="134" width="130" height="44" rx="8"/>
+        <rect class="fline" x="166" y="134" width="130" height="44" rx="8"/>
+      </g>
+
+      <!-- ▸ el-terminal · terminal window · 320×200 · anchor top-left.
+           The block cursor is f1; prompt chevrons are s1. -->
+      <g id="el-terminal" transform="translate(770, 124)">
+        <rect class="node" width="320" height="200" rx="14" stroke-width="1"/>
+        <path class="sline" d="M1 36 H319" stroke-width="1"/>
+        <g class="ffaint" opacity="0.55">
+          <circle cx="22" cy="18" r="4.5"/><circle cx="40" cy="18" r="4.5"/><circle cx="58" cy="18" r="4.5"/>
+        </g>
+        <path class="s1 glyph" stroke-width="1.8" d="M24 56 l7 6 -7 6"/>
+        <rect class="ffaint" opacity="0.45" x="44" y="59" width="118" height="7" rx="3.5"/>
+        <rect class="ffaint" opacity="0.25" x="24" y="88" width="186" height="6" rx="3"/>
+        <rect class="ffaint" opacity="0.25" x="24" y="102" width="152" height="6" rx="3"/>
+        <rect class="ffaint" opacity="0.25" x="24" y="116" width="204" height="6" rx="3"/>
+        <path class="s1 glyph" stroke-width="1.8" d="M24 140 l7 6 -7 6"/>
+        <rect class="f1" x="44" y="141" width="9" height="14"/>
+      </g>
+
+      <!-- ▸ el-phone · mobile window · 120×236 · anchor top-left. -->
+      <g id="el-phone" transform="translate(1160, 124)">
+        <rect class="node" width="120" height="236" rx="22" stroke-width="1"/>
+        <rect class="fground" x="7" y="7" width="106" height="222" rx="16"/>
+        <rect class="ffaint" opacity="0.5" x="44" y="17" width="32" height="9" rx="4.5"/>
+        <rect class="ffaint" opacity="0.5" x="22" y="48" width="58" height="9" rx="4.5"/>
+        <rect class="ffaint" opacity="0.28" x="22" y="70" width="76" height="6" rx="3"/>
+        <rect class="ffaint" opacity="0.28" x="22" y="84" width="62" height="6" rx="3"/>
+        <rect class="fline" x="22" y="106" width="76" height="50" rx="8"/>
+        <rect class="s1" x="22" y="172" width="76" height="22" rx="11" stroke-width="1.6"/>
+        <rect class="ffaint" opacity="0.5" x="42" y="218" width="36" height="4" rx="2"/>
+      </g>
+
+      <text class="sub" x="210" y="388" text-anchor="middle">el-window · 280×200</text>
+      <text class="sub" x="560" y="388" text-anchor="middle">el-browser · 320×200</text>
+      <text class="sub" x="930" y="388" text-anchor="middle">el-terminal · 320×200</text>
+      <text class="sub" x="1220" y="388" text-anchor="middle">el-phone · 120×236</text>
+
+      <text class="sec" x="70" y="436">SHAPES — infrastructure actors; caption beneath with .title/.sub like any node</text>
+
+      <!-- ▸ el-database · cylinder · 120×140 · anchor top-left (rim center at y=24). -->
+      <g id="el-database" transform="translate(70, 452)">
+        <path class="node" stroke-width="1" d="M2 24 A58 20 0 0 1 118 24 V116 A58 20 0 0 1 2 116 Z"/>
+        <path class="s1" stroke-width="1.6" d="M2 24 A58 20 0 0 0 118 24"/>
+        <path class="sfaint" opacity="0.3" stroke-width="1.2" d="M2 58 A58 20 0 0 0 118 58"/>
+        <path class="sfaint" opacity="0.3" stroke-width="1.2" d="M2 86 A58 20 0 0 0 118 86"/>
+      </g>
+
+      <!-- ▸ el-server · rack · 140×140 · anchor top-left. LEDs: f4 = healthy. -->
+      <g id="el-server" transform="translate(240, 452)">
+        <rect class="node" width="140" height="140" rx="12" stroke-width="1"/>
+        <path class="sline" d="M1 47.5 H139" stroke-width="1"/>
+        <path class="sline" d="M1 93.5 H139" stroke-width="1"/>
+        <g>
+          <circle class="f4" cx="20" cy="24" r="2.5"/><circle class="ffaint" opacity="0.5" cx="32" cy="24" r="2.5"/>
+          <rect class="ffaint" opacity="0.3" x="88" y="18" width="34" height="4" rx="2"/>
+          <rect class="ffaint" opacity="0.3" x="88" y="26" width="34" height="4" rx="2"/>
+        </g>
+        <g>
+          <circle class="f4" cx="20" cy="70.5" r="2.5"/><circle class="ffaint" opacity="0.5" cx="32" cy="70.5" r="2.5"/>
+          <rect class="ffaint" opacity="0.3" x="88" y="64.5" width="34" height="4" rx="2"/>
+          <rect class="ffaint" opacity="0.3" x="88" y="72.5" width="34" height="4" rx="2"/>
+        </g>
+        <g>
+          <circle class="f4" cx="20" cy="116.5" r="2.5"/><circle class="ffaint" opacity="0.5" cx="32" cy="116.5" r="2.5"/>
+          <rect class="ffaint" opacity="0.3" x="88" y="110.5" width="34" height="4" rx="2"/>
+          <rect class="ffaint" opacity="0.3" x="88" y="118.5" width="34" height="4" rx="2"/>
+        </g>
+      </g>
+
+      <!-- ▸ el-queue · slats + flow arrow · 168×64 · anchor top-left. -->
+      <g id="el-queue" transform="translate(430, 490)">
+        <rect class="node" width="22" height="64" rx="6" stroke-width="1"/>
+        <rect class="node" x="34" width="22" height="64" rx="6" stroke-width="1"/>
+        <rect class="node" x="68" width="22" height="64" rx="6" stroke-width="1"/>
+        <path class="s1 glyph" stroke-width="1.8" d="M102 32 H152 M146 25.5 L153.5 32 146 38.5"/>
+      </g>
+
+      <!-- ▸ el-cloud · 180×104 · anchor top-left. -->
+      <g id="el-cloud" transform="translate(648, 470)">
+        <path class="node" stroke-width="1" stroke-linejoin="round"
+              d="M40 100 H140 A28 28 0 0 0 149 45.5 A38 38 0 0 0 76 30 A42 42 0 0 0 40 100 Z"/>
+      </g>
+
+      <!-- ▸ el-router · router / switch · 84×84 · anchor top-left. -->
+      <g id="el-router" transform="translate(850, 480)">
+        <circle class="node" cx="42" cy="42" r="41" stroke-width="1"/>
+        <path class="s1 glyph" stroke-width="1.8" d="M18 30 H57 M50.5 23.5 L58 30 50.5 36.5"/>
+        <path class="s1 glyph" stroke-width="1.8" d="M66 54 H27 M33.5 47.5 L26 54 33.5 60.5"/>
+      </g>
+
+      <!-- ▸ el-actor · user badge · 68×68 · anchor top-left. -->
+      <g id="el-actor" transform="translate(1040, 488)">
+        <circle class="node" cx="34" cy="34" r="33" stroke-width="1"/>
+        <circle class="s1" cx="34" cy="26" r="8.5" stroke-width="1.8"/>
+        <path class="s1 glyph" stroke-width="1.8" d="M17.5 52 c2.5 -13 30.5 -13 33 0"/>
+      </g>
+
+      <!-- ▸ el-shield · security / auth · 92×104 · anchor top-left. -->
+      <g id="el-shield" transform="translate(1200, 470)">
+        <path class="node" stroke-width="1" stroke-linejoin="round"
+              d="M46 2 L90 18 V50 C90 80 46 102 46 102 C46 102 2 80 2 50 V18 Z"/>
+        <path class="s1 glyph" stroke-width="2.2" d="M30 52 l11 11 21 -23"/>
+      </g>
+
+      <text class="sub" x="130" y="622" text-anchor="middle">el-database · 120×140</text>
+      <text class="sub" x="310" y="622" text-anchor="middle">el-server · 140×140</text>
+      <text class="sub" x="514" y="622" text-anchor="middle">el-queue · 168×64</text>
+      <text class="sub" x="738" y="622" text-anchor="middle">el-cloud · 180×104</text>
+      <text class="sub" x="892" y="622" text-anchor="middle">el-router · 84×84</text>
+      <text class="sub" x="1074" y="622" text-anchor="middle">el-actor · 68×68</text>
+      <text class="sub" x="1246" y="622" text-anchor="middle">el-shield · 92×104</text>
+
+      <text class="sec" x="70" y="668">GLYPHS — 28×28 · class "s1 glyph" · drop into a node card at translate(20,30) in place of the stock icon</text>
+
+      <!-- Each glyph is a self-contained <g id="g-…"> in a 28×28 box, stroke 1.6.
+           The 48×48 tiles behind them are catalog furniture — don't copy those. -->
+
+      <!-- row A tiles -->
+      <g>
+        <rect class="node" x="101" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="211" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="321" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="431" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="541" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="651" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="761" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="871" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="981" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1091" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1201" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+      </g>
+
+      <g id="g-user" class="s1 glyph" transform="translate(111, 698)">
+        <circle cx="14" cy="9" r="5"/>
+        <path d="M4 25 c1.5 -7 18.5 -7 20 0"/>
+      </g>
+      <g id="g-users" class="s1 glyph" transform="translate(221, 698)">
+        <circle cx="10.5" cy="9.5" r="4.5"/>
+        <path d="M3 24 c1 -6.5 14 -6.5 15 0"/>
+        <path d="M18.5 5.7 a4.5 4.5 0 0 1 0 8.4"/>
+        <path d="M20.5 17.5 c2.8 1 4.3 3 4.8 6.3"/>
+      </g>
+      <g id="g-db" class="s1 glyph" transform="translate(331, 698)">
+        <ellipse cx="14" cy="6.8" rx="9.5" ry="3.3"/>
+        <path d="M4.5 6.8 V21.2 c0 1.8 4.3 3.3 9.5 3.3 s9.5 -1.5 9.5 -3.3 V6.8"/>
+        <path d="M4.5 14 c0 1.8 4.3 3.3 9.5 3.3 s9.5 -1.5 9.5 -3.3"/>
+      </g>
+      <g id="g-cloud" class="s1 glyph" transform="translate(441, 698)">
+        <path d="M20.4 22.2 H10.5 a8.2 8.2 0 1 1 7.8 -10.5 h2.1 a5.25 5.25 0 1 1 0 10.5 Z"/>
+      </g>
+      <g id="g-gear" class="s1 glyph" transform="translate(551, 698)">
+        <circle cx="14" cy="14" r="6.8"/>
+        <circle cx="14" cy="14" r="2.4"/>
+        <path d="M14 7.2 V3.8 M14 20.8 V24.2 M7.2 14 H3.8 M20.8 14 H24.2"/>
+        <path d="M9.2 9.2 L6.8 6.8 M18.8 9.2 L21.2 6.8 M9.2 18.8 L6.8 21.2 M18.8 18.8 L21.2 21.2"/>
+      </g>
+      <g id="g-lock" class="s1 glyph" transform="translate(661, 698)">
+        <rect x="6.5" y="12.5" width="15" height="11" rx="3"/>
+        <path d="M10 12.5 V9.5 a4 4 0 0 1 8 0 v3"/>
+        <path d="M14 16.5 v3"/>
+      </g>
+      <g id="g-key" class="s1 glyph" transform="translate(771, 698)">
+        <circle cx="9.5" cy="9.5" r="5"/>
+        <path d="M13.1 13.1 L23.5 23.5 M19.8 19.8 l2.7 -2.7"/>
+      </g>
+      <g id="g-globe" class="s1 glyph" transform="translate(881, 698)">
+        <circle cx="14" cy="14" r="10"/>
+        <path d="M4 14 h20"/>
+        <ellipse cx="14" cy="14" rx="4.5" ry="10"/>
+      </g>
+      <g id="g-bolt" class="s1 glyph" transform="translate(991, 698)">
+        <path d="M15.5 3.5 L7.5 16 h5 l-1.5 8.5 L19.5 12 h-5 z"/>
+      </g>
+      <g id="g-mail" class="s1 glyph" transform="translate(1101, 698)">
+        <rect x="4" y="6.5" width="20" height="15" rx="3"/>
+        <path d="M5.5 9 l8.5 6.5 8.5 -6.5"/>
+      </g>
+      <g id="g-clock" class="s1 glyph" transform="translate(1211, 698)">
+        <circle cx="14" cy="14" r="10"/>
+        <path d="M14 8.5 V14 l4 2.5"/>
+      </g>
+
+      <text class="sub" x="125" y="762" text-anchor="middle">user</text>
+      <text class="sub" x="235" y="762" text-anchor="middle">users</text>
+      <text class="sub" x="345" y="762" text-anchor="middle">db</text>
+      <text class="sub" x="455" y="762" text-anchor="middle">cloud</text>
+      <text class="sub" x="565" y="762" text-anchor="middle">gear</text>
+      <text class="sub" x="675" y="762" text-anchor="middle">lock</text>
+      <text class="sub" x="785" y="762" text-anchor="middle">key</text>
+      <text class="sub" x="895" y="762" text-anchor="middle">globe</text>
+      <text class="sub" x="1005" y="762" text-anchor="middle">bolt</text>
+      <text class="sub" x="1115" y="762" text-anchor="middle">mail</text>
+      <text class="sub" x="1225" y="762" text-anchor="middle">clock</text>
+
+      <!-- row B tiles -->
+      <g>
+        <rect class="node" x="101" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="211" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="321" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="431" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="541" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="651" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="761" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="871" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="981" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1091" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1201" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+      </g>
+
+      <g id="g-term" class="s1 glyph" transform="translate(111, 798)">
+        <rect x="3.5" y="4.5" width="21" height="19" rx="3"/>
+        <path d="M8 10.5 l3.5 3 -3.5 3 M15 16.5 h4.5"/>
+      </g>
+      <g id="g-file" class="s1 glyph" transform="translate(221, 798)">
+        <path d="M8.5 3.5 h7 L22 10 v12 a2.5 2.5 0 0 1 -2.5 2.5 h-11 A2.5 2.5 0 0 1 6 22 V6 a2.5 2.5 0 0 1 2.5 -2.5 z"/>
+        <path d="M15.5 3.5 V10 H22"/>
+      </g>
+      <g id="g-mobile" class="s1 glyph" transform="translate(331, 798)">
+        <rect x="8" y="3.5" width="12" height="21" rx="3"/>
+        <path d="M12.5 21 h3"/>
+      </g>
+      <g id="g-screen" class="s1 glyph" transform="translate(441, 798)">
+        <rect x="3.5" y="5" width="21" height="14" rx="2.5"/>
+        <path d="M14 19 V23.5 M10 23.5 h8"/>
+      </g>
+      <g id="g-api" class="s1 glyph" transform="translate(551, 798)">
+        <path d="M11.5 4 c-3.2 0 -4 1.2 -4 4 c0 2.6 0 4.4 -3.5 6 c3.5 1.6 3.5 3.4 3.5 6 c0 2.8 0.8 4 4 4"/>
+        <path d="M16.5 4 c3.2 0 4 1.2 4 4 c0 2.6 0 4.4 3.5 6 c-3.5 1.6 -3.5 3.4 -3.5 6 c0 2.8 -0.8 4 -4 4"/>
+      </g>
+      <g id="g-chip" class="s1 glyph" transform="translate(661, 798)">
+        <rect x="7" y="7" width="14" height="14" rx="2.5"/>
+        <rect x="11.5" y="11.5" width="5" height="5"/>
+        <path d="M10 7 V4 M14 7 V4 M18 7 V4 M10 21 v3 M14 21 v3 M18 21 v3"/>
+        <path d="M7 10 H4 M7 14 H4 M7 18 H4 M21 10 h3 M21 14 h3 M21 18 h3"/>
+      </g>
+      <g id="g-layers" class="s1 glyph" transform="translate(771, 798)">
+        <path d="M14 3.5 L24.5 9.5 14 15.5 3.5 9.5 z"/>
+        <path d="M3.5 14.5 L14 20.5 24.5 14.5"/>
+        <path d="M3.5 19.5 L14 25.5 24.5 19.5"/>
+      </g>
+      <g id="g-net" class="s1 glyph" transform="translate(881, 798)">
+        <circle cx="14" cy="6.5" r="3"/>
+        <circle cx="6" cy="21.5" r="3"/>
+        <circle cx="22" cy="21.5" r="3"/>
+        <path d="M12.6 9.2 L7.6 18.9 M15.4 9.2 l4.9 9.7 M9 21.5 h10"/>
+      </g>
+      <g id="g-search" class="s1 glyph" transform="translate(991, 798)">
+        <circle cx="12.5" cy="12.5" r="7"/>
+        <path d="M17.6 17.6 L24 24"/>
+      </g>
+      <g id="g-check" class="s1 glyph" transform="translate(1101, 798)">
+        <circle cx="14" cy="14" r="10"/>
+        <path d="M9.5 14.5 l3 3 6 -6.5"/>
+      </g>
+      <g id="g-warn" class="s1 glyph" transform="translate(1211, 798)">
+        <path d="M14 4.5 L24.5 22.5 a1.8 1.8 0 0 1 -1.6 2.7 H5.1 a1.8 1.8 0 0 1 -1.6 -2.7 z"/>
+        <path d="M14 11.5 v5 M14 20.2 v0.1"/>
+      </g>
+
+      <text class="sub" x="125" y="862" text-anchor="middle">term</text>
+      <text class="sub" x="235" y="862" text-anchor="middle">file</text>
+      <text class="sub" x="345" y="862" text-anchor="middle">mobile</text>
+      <text class="sub" x="455" y="862" text-anchor="middle">screen</text>
+      <text class="sub" x="565" y="862" text-anchor="middle">api</text>
+      <text class="sub" x="675" y="862" text-anchor="middle">chip</text>
+      <text class="sub" x="785" y="862" text-anchor="middle">layers</text>
+      <text class="sub" x="895" y="862" text-anchor="middle">net</text>
+      <text class="sub" x="1005" y="862" text-anchor="middle">search</text>
+      <text class="sub" x="1115" y="862" text-anchor="middle">check</text>
+      <text class="sub" x="1225" y="862" text-anchor="middle">warn</text>
+
+      <text class="sub" x="70" y="908" opacity="0.75">Copy a group, position with transform="translate(x,y)", recolor by swapping s1 → s2/s3/s4. Accents stay semantic: one meaning per accent, never decoration.</text>
+    </svg>
+  </body>
+</html>

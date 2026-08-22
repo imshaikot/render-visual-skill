@@ -1,0 +1,22 @@
+/* rendercraft theme: ember — warm dark. Every neutral carries a low-chroma amber hue. */
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --ground: oklch(0.152 0.016 52);
+  --surface: oklch(0.185 0.018 52 / 92%);
+  --line: oklch(0.98 0.01 60 / 15%);
+  --ink: oklch(0.958 0.012 70);
+  --ink-dim: oklch(0.735 0.018 60);
+  --ink-faint: oklch(0.62 0.02 60);
+  --a1: oklch(0.83 0.13 195);   /* cyan — primary, forward paths */
+  --a2: oklch(0.735 0.168 42);  /* ember — actions, returns */
+  --a3: oklch(0.7 0.21 335);    /* magenta — external, tertiary */
+  --a4: oklch(0.85 0.18 125);   /* lime — success */
+  --grad: linear-gradient(100deg, oklch(0.958 0.012 70) 4%, oklch(0.84 0.15 85) 44%, oklch(0.735 0.168 42) 96%);
+  --glow1: oklch(0.735 0.168 42);
+  --glow2: oklch(0.83 0.13 195);
+  --glow-opacity: 0.16;
+  --dot: oklch(0.98 0.01 60 / 9%);
+  --shadow: 0 32px 80px -20px oklch(0 0 0 / 0.55);
+  --font-display: "Inter Tight", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}

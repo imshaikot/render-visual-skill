@@ -1,0 +1,22 @@
+/* rendercraft theme: paper — light editorial. Warm paper, serif display, print restraint. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root {
+  --ground: oklch(0.965 0.008 85);
+  --surface: oklch(0.99 0.004 90);
+  --line: oklch(0.2 0.02 60 / 16%);
+  --ink: oklch(0.24 0.02 50);
+  --ink-dim: oklch(0.42 0.02 55);
+  --ink-faint: oklch(0.55 0.015 60);
+  --a1: oklch(0.55 0.19 25);    /* crimson — primary */
+  --a2: oklch(0.45 0.12 255);   /* deep blue — actions */
+  --a3: oklch(0.5 0.11 150);    /* forest — external */
+  --a4: oklch(0.65 0.12 80);    /* gold — success */
+  --grad: linear-gradient(100deg, oklch(0.24 0.02 50) 10%, oklch(0.55 0.19 25) 90%);
+  --glow1: transparent;
+  --glow2: transparent;
+  --glow-opacity: 0;
+  --dot: oklch(0.2 0.02 60 / 8%);
+  --shadow: 0 26px 60px -24px oklch(0.32 0.03 60 / 0.25);
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
