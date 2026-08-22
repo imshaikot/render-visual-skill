@@ -256,6 +256,17 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
       `--force-device-scale-factor=${scale}`,
       `--window-size=${w},${h}`,
       '--no-first-run',
+      // Chrome otherwise fills a throwaway profile with component-updater
+      // downloads — safe-browsing lists, TTS wasm, suggest models — ~100MB over
+      // a few dozen runs, none of which affects a screenshot. These disable
+      // Chrome's own background services only; page requests (Google Fonts)
+      // are untouched.
+      '--disable-background-networking',
+      '--disable-component-update',
+      '--disable-default-apps',
+      '--disable-sync',
+      '--no-default-browser-check',
+      '--no-pings',
       `--user-data-dir=${profile}`,
       '--virtual-time-budget=8000',
       ...(transparent ? ['--default-background-color=00000000'] : []),
