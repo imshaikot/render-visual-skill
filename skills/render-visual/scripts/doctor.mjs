@@ -12,7 +12,7 @@
 import { readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { findChrome, reapOrphans } from './chrome.mjs'
+import { TEMP_ROOT, findChrome, reapOrphans } from './chrome.mjs'
 
 const json = process.argv.includes('--json')
 const prune = process.argv.includes('--prune')
@@ -29,15 +29,21 @@ const dirSize = (dir) => {
 }
 const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
-const chrome = findChrome() // exits 1 with its own message when nothing is installed
+// Cleanup first, and a browser is not required for it. findChrome() exits 1
+// when nothing is installed, and running it first made this tool useless in the
+// one situation it is most needed: a machine where Chrome has been removed and
+// its profile directories are all that is left to clean up.
 const reaped = reapOrphans()
+const chrome = findChrome({ required: false })
 
 // Anything left with a lock is a live render; everything else is ours to prune.
-const entries = readdirSync(tmpdir()).sort()
+const entries = (() => {
+  try { return readdirSync(TEMP_ROOT).sort() } catch { return [] }
+})()
 const slots = []
 for (const name of entries) {
-  if (!/^rendercraft-profile(-\d+)?$/.test(name)) continue
-  const dir = join(tmpdir(), name)
+  if (!/^profile(-\d+)?$/.test(name)) continue
+  const dir = join(TEMP_ROOT, name)
   const busy = entries.includes(`${name}.lock`)
   const bytes = dirSize(dir)
   slots.push({ name, bytes, busy })
@@ -52,9 +58,10 @@ const report = { chrome, reaped, slots, totalBytes: total, pruned: prune }
 if (json) {
   console.log(JSON.stringify(report, null, 2))
 } else {
-  console.log(`chrome    ${chrome}`)
+  console.log(`chrome    ${chrome ?? 'none found — renders will fail, but cleanup still works'}`)
   console.log(`reaped    ${reaped.chromes.length} orphan Chrome process(es)${reaped.chromes.length ? ` (pids ${reaped.chromes.join(', ')})` : ''}`)
-  console.log(`cleared   ${reaped.locks.length} stale lock/tomb file(s), ${reaped.frames.length} abandoned frame dir(s)`)
+  console.log(`cleared   ${reaped.locks.length} stale lock/tomb file(s), ${reaped.frames.length} abandoned frame/work dir(s)`)
+  if (reaped.legacy.length) console.log(`legacy    swept ${reaped.legacy.length} pre-v1.0 entr(ies) from the shared temp dir`)
   if (slots.length) {
     console.log(`profiles  ${slots.length} slot(s), ${mb(total)} total${prune ? ' — pruned the idle ones' : ''}`)
     for (const s of slots) console.log(`          ${s.name.padEnd(28)} ${mb(s.bytes).padStart(9)}${s.busy ? '  (in use)' : ''}`)
