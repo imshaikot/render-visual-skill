@@ -68,6 +68,26 @@ export function assertStylesheets(html, baseDir) {
 const claimedLocks = []
 const liveChildren = new Set()
 
+// Every scrap of temp state this pipeline creates lives under one root, so
+// "what did this leave behind?" has a one-directory answer and cleaning up is
+// an `rm -rf` rather than a pattern hunt across a shared temp dir.
+export const TEMP_ROOT = join(tmpdir(), 'render-visual')
+
+/**
+ * A private scratch directory for this process, under TEMP_ROOT.
+ *
+ * The prepared copy of a page used to be written beside the *input*, which made
+ * a read-only input directory an uncaught EACCES and forced a themes/ directory
+ * to sit next to every figure. Chrome renders a copy from anywhere identically
+ * as long as the page carries a <base href> or absolute asset URLs, so the copy
+ * belongs somewhere always writable.
+ */
+export function makeWorkDir() {
+  const dir = join(TEMP_ROOT, `work-${process.pid}`)
+  mkdirSync(dir, { recursive: true })
+  return dir
+}
+
 // Callers that skip claimProfile() get their own dir rather than slot 0's, so
 // an unlocked caller can never collide with a claimed slot.
 const UNCLAIMED_PROFILE = join(tmpdir(), 'rendercraft-profile-unlocked')
