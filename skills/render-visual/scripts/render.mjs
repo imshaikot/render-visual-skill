@@ -17,7 +17,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { assertRendered, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
+import { assertPng, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
 
 const USAGE = 'render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--theme name] [--transparent]'
@@ -88,7 +88,9 @@ try {
   // their stylesheet relatively, and the <base href> above preserves that.
   assertStylesheets(html, inputDir)
   await shootResilient(chrome, pathToFileURL(source).href, output, w, h, scale, { transparent })
-  assertRendered(resolve(output))
+  // Dimensions are only asserted for integer scales: Chrome's own rounding at a
+  // fractional device-scale factor is not worth a false failure over.
+  assertPng(resolve(output), Number.isInteger(scale) ? { w: w * scale, h: h * scale } : null)
   console.log(`wrote ${output} (${w}x${h} @${scale}x = ${w * scale}x${h * scale}${transparent ? ', alpha' : ''})`)
 } catch (err) {
   console.error(err.message)

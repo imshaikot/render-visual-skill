@@ -10,7 +10,7 @@
 // the leak accounting in T7 meaningful. Cost: every profile is cold, so a render
 // here takes about a second longer than a warm one.
 //
-// --quick skips the animation test (T6), the slowest by some way.
+// --quick skips the animation test, the slowest by some way.
 // Exits non-zero on the first failing invariant.
 
 import { spawn, spawnSync } from 'node:child_process'
@@ -19,7 +19,7 @@ import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, re
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { findChrome } from './chrome.mjs'
+import { assertPng, findChrome } from './chrome.mjs'
 
 const SCRIPTS = dirname(fileURLToPath(import.meta.url))
 const SKILL_DIR = dirname(SCRIPTS)
@@ -274,7 +274,60 @@ await test('a blank canvas is rejected, not shipped', async () => {
     '<body style="width:400px;height:200px;background:#fff;overflow:hidden"></body></html>')
   const r = render('blank.html', 'blank.png', '--scale', '1')
   assert(r.status !== 0, 'an all-white canvas was reported as a success')
-  assert(/essentially blank/.test(r.stderr), `unexpected message: ${r.stderr.trim()}`)
+  assert(/no content/.test(r.stderr), `unexpected message: ${r.stderr.trim()}`)
+})
+
+await test('a real template with no content is rejected, furniture and all', async () => {
+  // The blank test above uses an empty body, so a distinct-colour count alone is
+  // enough to fail it. This one is the case that count cannot see: a real
+  // template whose content is gone but whose .glow/.dots gradient still paints
+  // 169 distinct colours. Only the luminance spread separates it from a figure.
+  writeFileSync(join(work, 'furniture.html'),
+    readFileSync(join(work, 'fig.html'), 'utf8').replace(/<svg[\s\S]*?<\/svg>/gi, ''))
+  const r = render('furniture.html', 'furniture.png', '--theme', 'ember', '--scale', '1')
+  assert(r.status !== 0, 'a content-free render of a real template was reported as a success')
+  assert(/no content/.test(r.stderr), `unexpected message: ${r.stderr.trim()}`)
+})
+
+await test('a truncated PNG is rejected, not reported as a success', async () => {
+  const r = render('fig.html', 'trunc.png', '--theme', 'slate', '--scale', '1')
+  assert(r.status === 0, `setup render failed: ${r.stderr.trim()}`)
+  const full = readFileSync(join(work, 'trunc.png'))
+  writeFileSync(join(work, 'trunc.png'), full.subarray(0, Math.floor(full.length * 0.6)))
+  let caught = null
+  try { assertPng(join(work, 'trunc.png')) } catch (err) { caught = err }
+  assert(caught, 'a PNG cut to 60% of its bytes was accepted')
+  assert(/truncated/.test(caught.message), `unexpected message: ${caught.message}`)
+})
+
+await test('every shipped preview still passes the content guard', async () => {
+  // The false-positive guard, and the reason the ink threshold can be trusted:
+  // six real pipeline outputs across four themes and five templates, no Chrome
+  // launched. A stricter guard's real risk is rejecting good renders.
+  const dir = join(SKILL_DIR, '..', '..', 'previews')
+  const pngs = ls(dir, /\.png$/)
+  assert(pngs.length >= 5, `expected the shipped previews, found ${pngs.length}`)
+  for (const f of pngs) assertPng(join(dir, f))
+})
+
+await test('bad flag values are refused before Chrome starts', async () => {
+  for (const args of [
+    ['--size', 'zzz'], ['--size', '100'], ['--scale', 'abc'], ['--scale', '0'],
+    ['--theme', 'nosuch'], ['--them', 'paper'],
+  ]) {
+    const r = render('fig.html', 'never.png', ...args)
+    assert(r.status !== 0, `${args.join(' ')} was accepted`)
+    assert(!existsSync(join(work, 'never.png')), `${args.join(' ')} wrote a PNG anyway`)
+  }
+})
+
+await test('doctor cleans up on a machine with no browser', async () => {
+  const r = spawnSync(process.execPath, [join(SCRIPTS, 'doctor.mjs'), '--json'],
+    { cwd: work, env: { ...env, CHROME_PATH: '/nonexistent/chrome' }, encoding: 'utf8' })
+  assert(r.status === 0, `doctor exited ${r.status}: ${r.stderr.trim()}`)
+  const report = JSON.parse(r.stdout)
+  assert(report.chrome === null, `expected no browser, got ${report.chrome}`)
+  assert(report.reaped, 'no reap report — cleanup did not run')
 })
 
 await test('an impossible render fails fast instead of relaunching Chrome', async () => {

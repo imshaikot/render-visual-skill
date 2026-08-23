@@ -18,7 +18,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { TEMP_ROOT, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
+import { TEMP_ROOT, assertPng, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
 import { decodePng, encodeGif } from './gif.mjs'
 
@@ -167,6 +167,15 @@ try {
   const failure = settled.find((s) => s.status === 'rejected' && s.reason?.message !== 'aborted')
     ?? settled.find((s) => s.status === 'rejected')
   if (failure) throw failure.reason
+
+  // The first and last frames are the ones that prove the animation actually
+  // animated something: if the theme failed to apply or the page rendered empty,
+  // both are content-free, and a GIF of 66 empty frames is the failure this
+  // script's own comments warned about while never checking for it.
+  const expect = Number.isInteger(scale) ? { w: w * scale, h: h * scale } : null
+  for (const i of new Set([0, files.length - 1])) {
+    assertPng(files[i], expect)
+  }
 
   // Lazy provider: decode PNGs on demand so only one frame's RGB is in memory
   // at a time — at 25fps a long sequence would otherwise hold hundreds of MB.

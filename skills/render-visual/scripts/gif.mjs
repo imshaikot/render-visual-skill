@@ -5,15 +5,30 @@ import { inflateSync } from 'node:zlib'
 
 /* ── PNG decode ─────────────────────────────────────────────────────────── */
 
-/** Decode an 8-bit non-interlaced RGB/RGBA PNG to { width, height, rgb } (rgb = Buffer, 3 bytes/px). */
-export function decodePng(buf) {
-  const SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-  if (!buf.subarray(0, 8).equals(SIG)) throw new Error('not a PNG')
+const SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
 
+/**
+ * Walk a PNG's chunk table without decoding it.
+ *
+ * Separated from decodePng so callers can tell a *corrupt* file — no signature,
+ * no IEND, a chunk running past the end — from one this decoder simply does not
+ * support. The first is a failed render and must be fatal; the second is an
+ * exotic Chrome build and must not be, or a stricter guard starts rejecting
+ * good images. Cheap: it reads lengths and skips, touching no pixel data.
+ */
+export function inspectPng(buf) {
+  if (buf.length < 8 || !buf.subarray(0, 8).equals(SIG)) {
+    return { signature: false, hasIhdr: false, hasIend: false, truncated: false }
+  }
   let width = 0, height = 0, bitDepth = 0, colorType = 0, interlace = 0
+  let hasIhdr = false, hasIend = false, truncated = false
   const idat = []
-  for (let off = 8; off < buf.length; ) {
+  let off = 8
+  while (off + 8 <= buf.length) {
     const len = buf.readUInt32BE(off)
+    // 12 = 4 length + 4 type + 4 CRC. A chunk claiming to run past the buffer is
+    // the signature of a write cut short.
+    if (off + 12 + len > buf.length) { truncated = true; break }
     const type = buf.toString('ascii', off + 4, off + 8)
     const data = buf.subarray(off + 8, off + 8 + len)
     if (type === 'IHDR') {
@@ -22,13 +37,28 @@ export function decodePng(buf) {
       bitDepth = data[8]
       colorType = data[9]
       interlace = data[12]
+      hasIhdr = true
     } else if (type === 'IDAT') {
       idat.push(data)
-    } else if (type === 'IEND') break
+    } else if (type === 'IEND') {
+      hasIend = true
+      break
+    }
     off += 12 + len
   }
+  if (!hasIend) truncated = true
+  return { signature: true, hasIhdr, hasIend, truncated, width, height, bitDepth, colorType, interlace, idat }
+}
+
+/** Decode an 8-bit non-interlaced RGB/RGBA PNG to { width, height, rgb } (rgb = Buffer, 3 bytes/px). */
+export function decodePng(buf) {
+  const info = inspectPng(buf)
+  if (!info.signature) throw new Error('not a PNG')
+  const { width, height, bitDepth, colorType, interlace, idat } = info
   if (bitDepth !== 8 || (colorType !== 2 && colorType !== 6) || interlace !== 0) {
-    throw new Error(`unsupported PNG (depth ${bitDepth}, color type ${colorType}, interlace ${interlace})`)
+    const err = new Error(`unsupported PNG (depth ${bitDepth}, color type ${colorType}, interlace ${interlace})`)
+    err.unsupported = true // a variant we cannot read, not a broken render
+    throw err
   }
 
   const bpp = colorType === 6 ? 4 : 3
