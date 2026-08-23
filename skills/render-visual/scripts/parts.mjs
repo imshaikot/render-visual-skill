@@ -237,10 +237,18 @@ export function inlineParts(html, { dir = PARTS_DIR, onError = (m) => { throw ne
   }
   out += html.slice(cursor)
 
-  // One pass only. A part file that itself referenced a part would otherwise
-  // reach Chrome as a literal <g data-part> — an empty group, rendering nothing.
+  // One pass only. Anything still carrying the attribute would reach Chrome as a
+  // literal <g data-part> — an empty group, rendering nothing, inside a figure
+  // that otherwise screenshots perfectly.
   if (used.size && /\bdata-part\s*=/.test(out)) {
-    onError('A part file references another part. Includes are not recursive; inline the inner part into it.')
+    onError(
+      'An include was left unresolved: a data-part survived substitution.\n' +
+        '  Includes are not recursive, so this is one of three things:\n' +
+        '    · a part nested INSIDE another part\'s call site — place the part, then draw its\n' +
+        '      contents in a sibling <g> on the same origin (templates/deployment.html does this)\n' +
+        '    · a part file that references another part — inline the inner one into it\n' +
+        '    · prose that spells the attribute out in escaped text — reword it',
+    )
   }
   return { html: out, used: [...used].sort() }
 }
