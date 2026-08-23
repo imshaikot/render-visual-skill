@@ -82,12 +82,32 @@ claude.ai chat, the Skills API, cloud sessions and most CI images.
 
 ## Install
 
-**Claude Code — as a plugin** (gets you `/plugin update`):
+**Claude Code — as a plugin** (gets you `/plugin update`). From your shell:
 
 ```sh
+claude plugin marketplace add imshaikot/render-visual-skill
+claude plugin install render-visual-skill@render-visual-skill
+```
+
+Or from inside Claude Code, as **two separate commands** — run the first, let it finish, then
+run the second:
+
+```
 /plugin marketplace add imshaikot/render-visual-skill
+```
+
+```
 /plugin install render-visual-skill@render-visual-skill
 ```
+
+> [!IMPORTANT]
+> `/plugin marketplace add` may open an **Add Marketplace** dialog. Only
+> `imshaikot/render-visual-skill` belongs in that field. Pasting both lines into it is
+> rejected as an invalid `owner/repo` shorthand — the `/plugin install` line is a second
+> command, not part of the source.
+
+The repeated name is not a typo: `render-visual-skill@render-visual-skill` reads as
+`plugin@marketplace`, and here both are called the same thing.
 
 **Any agent — clone the skill into its skills directory.** The `skill` branch is published by
 CI with the skill at its root, so the clone target *is* the skill:
