@@ -40,7 +40,8 @@ Gemini CLI, OpenCode, Amp, Goose and others.
 | **Element library** | 55 referenceable parts — device frames, infrastructure shapes, charts, BI furniture and 29 glyphs |
 | **Chart & BI schematics** | Pie, donut, bar, hbar, line, area, stacked, scatter, funnel, gauge, heatmap, sparkline, dashboard, KPI tile, table |
 | **Your own images** | Screenshots and photos placed into a device frame or cropped to a shape, inlined before the render |
-| **Four themes** | Swap with one flag — every template consumes design tokens, never hard-coded colour |
+| **Eight themes** | Swap with one flag — every template consumes design tokens, never hard-coded colour |
+| **Alpha grades** | Every colour token has a component twin, so `oklch(var(--a1-raw) / 12%)` gives any transparency of any accent — washes, edges and scrims that cannot drift from the colour they came from |
 | **Transparent output** | A real alpha channel via `--transparent`, so a figure drops onto any background |
 | **Parallel-safe** | Each render claims its own Chrome profile by pid lockfile, and reaps orphans an interrupted run left behind |
 | **Fails loudly** | A wrong image at exit 0 is the one thing refused outright — blank canvases, missing stylesheets, unreadable images and unknown parts all fail, never render quietly wrong |
@@ -63,7 +64,7 @@ and a hand-rolled GIF89a/LZW encoder with changed-region deltas does the rest:
 ![animated sequence diagram](previews/sequence-ember.gif)
 
 Code snippets get a Carbon-style window — hand-highlighted with a fixed token→accent mapping,
-line numbers, a highlight line and diff rows, in any of the four themes:
+line numbers, a highlight line and diff rows, in any of the eight themes:
 
 ![code snippet, ember theme](previews/code-ember.png)
 
@@ -73,7 +74,7 @@ line numbers, a highlight line and diff rows, in any of the four themes:
 - **A Chromium-based browser** — Chrome, Chromium, Brave or Edge. Standard install paths and
   `PATH` are probed; `CHROME_PATH` overrides. Without one:
   `npx @puppeteer/browsers install chrome@stable` (no root needed).
-- **Network access at render time**, for theme fonts. The four themes `@import` from
+- **Network access at render time**, for theme fonts. All eight themes `@import` from
   `fonts.googleapis.com`. Offline renders still succeed but fall back to system fonts, so
   they will not match the previews above.
 
@@ -160,6 +161,40 @@ Every template consumes tokens only, so one source file renders in any theme.
 | `slate` | Cool dark — violet-leaning neutrals, jewel accents | Space Grotesk + IBM Plex Mono |
 | `paper` | Light editorial — warm paper, serif display, print restraint | Fraunces + IBM Plex Mono |
 | `terminal` | Near-black phosphor — mono everything, green/amber | JetBrains Mono |
+| `blueprint` | Drafting board — cyanotype navy, chalk lines, a grid that reads | Archivo + Roboto Mono |
+| `frost` | Light UI — cool white, glass surfaces, indigo/teal | Manrope + JetBrains Mono |
+| `neon` | After hours — indigo dark, high-chroma magenta and cyan | Chakra Petch + Fira Code |
+| `sepia` | Aged press — cream stock, brown ink, typewriter mono | Newsreader + Courier Prime |
+
+`templates/palette.html` is a specimen sheet that renders in whichever theme you hand it and
+labels itself from the tokens it was given — both fonts, the gradient, the neutrals, the
+alpha ladders, and the same parts dressed by that theme:
+
+```sh
+node $S/scripts/render.mjs $S/templates/palette.html palette.png --theme neon
+```
+
+| | |
+| --- | --- |
+| ![blueprint theme specimen](previews/palette-blueprint.png) | ![frost theme specimen](previews/palette-frost.png) |
+| `blueprint` | `frost` |
+| ![neon theme specimen](previews/palette-neon.png) | ![sepia theme specimen](previews/palette-sepia.png) |
+| `neon` | `sepia` |
+
+### Alpha grades
+
+Every colour token ships a component twin — `--a1-raw`…`--a4-raw`, `--ink-raw`,
+`--ground-raw`, `--surface-raw` — three bare OKLCH numbers, so any transparency of any token
+is one expression away:
+
+```css
+.badge { background: oklch(var(--a1-raw) / 12%); border: 1px solid oklch(var(--a1-raw) / 45%); color: var(--a1); }
+.scrim { background: oklch(var(--ground-raw) / 72%); }   /* a caption band over a photo */
+```
+
+The solid token is built from the same components (`--a1: oklch(var(--a1-raw))`), so a wash
+can never drift from the colour it is a wash of — and an invariant refuses any theme whose
+component tokens are not composable, because a bad one paints *nothing* rather than failing.
 
 Adding a theme is one CSS file defining the same tokens. Adding a template is one HTML file
 that consumes only tokens.
@@ -218,7 +253,7 @@ node $S/scripts/render.mjs <input.html> <output.png> [flags]
 
 | Flag | Default | |
 | --- | --- | --- |
-| `--theme` | the page's own | `ember` · `slate` · `paper` · `terminal`; inlined into a temp copy |
+| `--theme` | the page's own | `ember` · `slate` · `paper` · `terminal` · `blueprint` · `frost` · `neon` · `sepia`; inlined into a temp copy |
 | `--scale` | `2` | Output multiplier — 1360×740 at 2× is a 2720×1480 PNG |
 | `--size` | the `<body>` | `WxH` override, e.g. `1200x630` |
 | `--transparent` | off | Real alpha channel: ground and furniture stripped |
@@ -250,7 +285,7 @@ that up:
 
 ```sh
 node $S/scripts/doctor.mjs --prune   # reap orphans, clear stale locks, reclaim profile disk
-node $S/scripts/selftest.mjs         # ~2m: assert all 21 concurrency and output invariants
+node $S/scripts/selftest.mjs         # ~2m: assert all 22 concurrency and output invariants
 ```
 
 Reach for `doctor.mjs` when a render fails with *"is another instance using profile"*.
@@ -262,10 +297,11 @@ skills/render-visual/       the skill — this directory is what gets installed
   SKILL.md                  workflow, aesthetic rules, layout discipline
   templates/                diagram 1360×740 · slide 1920×1080 · card 1200×630
                             sequence (animatable) · code 1360×740
-                            elements + charts (parts sheets)
+                            elements + charts (parts sheets) · palette (theme specimen)
   parts/                    55 includable elements — frames, shapes, charts,
                             BI furniture, glyphs
-  themes/                   ember · slate · paper · terminal  (design tokens, swappable)
+  themes/                   ember · slate · paper · terminal · blueprint · frost
+                            neon · sepia  (design tokens, swappable)
   scripts/                  render.mjs (PNG) · animate.mjs (GIF) · gif.mjs (GIF89a encoder)
                             chrome.mjs (profiles, reaping, guards) · cli.mjs · doctor.mjs
                             parts.mjs (element includes) · images.mjs (image includes)

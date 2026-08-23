@@ -1,6 +1,6 @@
 ---
 name: render-visual
-description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Needs a shell, Node 18+, and a Chromium-based browser. Four built-in themes (warm dark, cool dark, light editorial, terminal), swappable with a flag. Also frames your own screenshots and photos — in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, banners, device mockups, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, screenshot in a browser frame, device mockup, render a png, make an image, visual."
+description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Needs a shell, Node 18+, and a Chromium-based browser. Eight built-in themes (dark, light, editorial, terminal, blueprint, neon, sepia), swappable with a flag. Also frames your own screenshots and photos — in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, banners, device mockups, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, screenshot in a browser frame, device mockup, render a png, make an image, visual."
 license: MIT
 compatibility: "Requires shell command execution, Node 18+, and a local Chromium-based browser (Chrome, Chromium, Brave, or Edge); set CHROME_PATH if it is installed somewhere unusual. Theme fonts load from fonts.googleapis.com, so renders without network access fall back to system fonts. Cannot run where there is no shell or no browser: claude.ai chat, the Skills API, Cowork and cloud sessions, and most CI images."
 metadata:
@@ -21,6 +21,7 @@ file instead of hand-picked colors.
 | `$SKILL/templates/sequence.html` | 1360×740 | Sequence diagrams: lifelines, calls and returns, activations — static, or animated step by step |
 | `$SKILL/templates/code.html` | 1360×740 | Code snippets in a themed window (Carbon-style): hand-highlighted tokens, line numbers, a highlight line, diff rows — see §7 |
 | `$SKILL/templates/charts.html` | parts sheet | Browsable catalogue of the chart and BI parts — pie, donut, bar, line, area, stacked, scatter, funnel, gauge, heatmap, sparkline, KPI tile, table, dashboard. Schematic figures, not plotted data — see §5 |
+| `$SKILL/templates/palette.html` | 1360×980 | Theme specimen: the tokens, both fonts, the gradient, the alpha ladders, the parts dressed by that theme. A catalogue, never a deliverable — see §4 |
 | `$SKILL/templates/elements.html` | parts sheet | Browsable catalogue of the frames, infrastructure shapes and icon glyphs in `$SKILL/parts/`. Reference them, don't copy them. Never a deliverable — see §5 |
 
 | Theme | Mood | Fonts |
@@ -29,6 +30,16 @@ file instead of hand-picked colors.
 | `slate` | Cool dark — violet-leaning neutrals, jewel accents | Space Grotesk + IBM Plex Mono |
 | `paper` | Light editorial — warm paper, serif display, print restraint | Fraunces + IBM Plex Mono |
 | `terminal` | Near-black phosphor — mono everything, green/amber | JetBrains Mono |
+| `blueprint` | Drafting board — cyanotype navy, chalk lines, a grid that reads | Archivo + Roboto Mono |
+| `frost` | Light UI — cool white, glass surfaces, indigo/teal | Manrope + JetBrains Mono |
+| `neon` | After hours — indigo dark, high-chroma magenta and cyan | Chakra Petch + Fira Code |
+| `sepia` | Aged press — cream stock, brown ink, typewriter mono | Newsreader + Courier Prime |
+
+To see one whole, render the specimen sheet in it:
+
+```bash
+node "$SKILL/scripts/render.mjs" "$SKILL/templates/palette.html" palette.png --theme blueprint
+```
 
 ## 0. Find the skill first
 
@@ -201,12 +212,29 @@ Themes define tokens; templates consume only tokens. Never hard-code a color in 
 | `--a3` | External parties, alternates, alerts |
 | `--a4` | Success, confirmation |
 
+**Alpha grades** — every colour token has a component twin: `--a1-raw`…`--a4-raw`,
+`--ink-raw`, `--ground-raw`, `--surface-raw`, each three bare OKLCH numbers. Ask them for any
+transparency you need:
+
+```css
+.badge { background: oklch(var(--a1-raw) / 12%); border: 1px solid oklch(var(--a1-raw) / 45%); color: var(--a1); }
+.scrim { background: oklch(var(--ground-raw) / 72%); }   /* a caption band over a photo */
+```
+
+The solid token is built from the same components (`--a1: oklch(var(--a1-raw))`), so a wash
+can never drift from the colour it is a wash of. Grades that read: **6–12%** a wash to sit
+text on, **20–35%** a fill meant to be seen, **45%** an edge, **70%+** a scrim over an image.
+A grade is still the accent — the semantics above hold, so a 12% `--a3` wash means *external*,
+not *a nice pink*. In SVG this needs a CSS class like every other `var()`; a presentation
+attribute will not resolve it. `templates/palette.html` renders the whole ladder for whichever
+theme you hand it, which is the fastest way to pick a grade.
+
 **Gradient text** (`--grad`) is for one phrase per image, on the headline. The ramp is
 tuned per theme; do not compose your own across near-complementary hues — the midpoint
 greys out.
 
 **Furniture** stack, bottom to top: ground → blurred glow circles (`--glow1`/`--glow2` at
-`--glow-opacity`; the light theme sets it to 0) → the dot lattice (masked radially so it
+`--glow-opacity`; `paper` and `sepia` set it to 0, `frost` keeps a pale one) → the dot lattice (masked radially so it
 fades at the edges) → content. Do not add new furniture kinds; restraint is the style.
 
 **Diagrams**: nodes are rounded rects (`rx=14`) in `--surface` with a `--line` border, a
