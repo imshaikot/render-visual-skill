@@ -1,6 +1,6 @@
 ---
 name: render-visual
-description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Needs a shell, Node 18+, and a Chromium-based browser. Four built-in themes (warm dark, cool dark, light editorial, terminal), swappable with a flag. USE FOR: architecture and flow diagrams, slide decks, talk slides, og/social cards, blog and README figures, banners, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), screenshots of real UIs, photo editing, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, render a png, make an image, visual."
+description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Needs a shell, Node 18+, and a Chromium-based browser. Four built-in themes (warm dark, cool dark, light editorial, terminal), swappable with a flag. Also frames your own screenshots and photos — in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, banners, device mockups, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, screenshot in a browser frame, device mockup, render a png, make an image, visual."
 license: MIT
 compatibility: "Requires shell command execution, Node 18+, and a local Chromium-based browser (Chrome, Chromium, Brave, or Edge); set CHROME_PATH if it is installed somewhere unusual. Theme fonts load from fonts.googleapis.com, so renders without network access fall back to system fonts. Cannot run where there is no shell or no browser: claude.ai chat, the Skills API, Cowork and cloud sessions, and most CI images."
 metadata:
@@ -19,7 +19,7 @@ file instead of hand-picked colors.
 | `$SKILL/templates/slide.html` | 1920×1080 | Presentation slides: kicker, headline with a gradient phrase, up to three points, footer |
 | `$SKILL/templates/card.html` | 1200×630 | Social/og cards: mark, headline, one-paragraph pitch, chips, bottom rule |
 | `$SKILL/templates/sequence.html` | 1360×740 | Sequence diagrams: lifelines, calls and returns, activations — static, or animated step by step |
-| `$SKILL/templates/code.html` | 1360×740 | Code snippets in a themed window (Carbon-style): hand-highlighted tokens, line numbers, a highlight line, diff rows — see §6 |
+| `$SKILL/templates/code.html` | 1360×740 | Code snippets in a themed window (Carbon-style): hand-highlighted tokens, line numbers, a highlight line, diff rows — see §7 |
 | `$SKILL/templates/charts.html` | parts sheet | Browsable catalogue of the chart and BI parts — pie, donut, bar, line, area, stacked, scatter, funnel, gauge, heatmap, sparkline, KPI tile, table, dashboard. Schematic figures, not plotted data — see §5 |
 | `$SKILL/templates/elements.html` | parts sheet | Browsable catalogue of the frames, infrastructure shapes and icon glyphs in `$SKILL/parts/`. Reference them, don't copy them. Never a deliverable — see §5 |
 
@@ -98,6 +98,9 @@ node "$SKILL/scripts/render.mjs" <input.html> <output.png> [--size WxH] [--scale
   fights the content, place the PNG on a calmer area.
 - **`<g data-part="...">` is replaced with that part's markup** from `$SKILL/parts/` before
   the render, so a figure references shapes instead of carrying copies of them. See §5.
+- **`data-image="./shot.png"` puts an image on the page** — inside a device frame, cropped to
+  a shape, or as a background. Local files only; they are read and inlined before the render,
+  and anything unreadable is fatal rather than an invisible hole. See §6.
 - **A missing local stylesheet is fatal, and checked before Chrome launches.** Every color
   is a theme token, so a broken `<link>` does not degrade the render — it empties it, into a
   blank white page that screenshots as a perfect success. Passing `--theme` sidesteps this
@@ -177,6 +180,9 @@ node "$SKILL/scripts/animate.mjs" my-sequence.html my-sequence.gif --theme ember
 | `--scale` | 1 | GIFs get heavy fast — stay at 1x unless the canvas is small |
 | `--theme` / `--size` | — | as in render.mjs |
 | `--keep-frames` | off | keep the per-frame PNGs for inspection |
+
+Images (§6) work here too and are read once for the whole run, not once per frame — but
+every frame still carries them, so keep a source that appears in a GIF small.
 
 Rules of thumb: steps are numbered 1..N with no gaps; give activations the step of the call
 that starts them; a GIF that tells the story in under ~8 steps is one people actually watch.
@@ -258,7 +264,8 @@ and both built from the same includes.
 - An unknown part id is fatal too, and lists what exists.
 
 Frames are nodes in their own right: caption them with a `.title`/`.sub` pair beneath, or
-replace the faint skeleton bars with real mono `<text>` when the content matters. Glyphs drop
+replace the faint skeleton bars with real mono `<text>` when the content matters. They also
+take a real screenshot — `data-image` fills the frame's screen, see §6. Glyphs drop
 into a standard node card at `transform="translate(20,30)"` in place of the stock circle
 glyph; they inherit stroke 1.6 and round caps from `.glyph`.
 
@@ -278,7 +285,60 @@ decoration, so a chart sits inside a figure without competing with the arrows ar
 Copying a part's geometry into your figure still works and renders identically — reach for it
 only when you need to edit the shape itself.
 
-## 6. Code snippets
+## 6. Images
+
+Any image on disk can go into a figure: a screenshot inside a device frame, a photo cropped
+to a circle, a logo on a card, a photograph behind a headline. One attribute does all of it.
+
+```html
+<g data-part="el-browser" data-image="./shot.png" transform="translate(60,80)"/>
+<image data-image="./avatar.jpg" data-shape="circle" x="60" y="420" width="160" height="160"/>
+<div data-image="./texture.jpg" style="position:absolute;inset:0"></div>
+<img src="./logo.png" style="width:120px">
+```
+
+**On a framing part, `data-image` fills its screen.** `el-browser`, `el-window`,
+`el-terminal`, `el-phone` and `el-dashboard` each declare the rectangle their content sits
+in; the image is cropped to the shell's own corners and covers the skeleton bars the frame
+ships with. Every other part refuses `data-image` and lists the ones that take it — for any
+other shape, place an `<image>` yourself.
+
+| Knob | Default | |
+|---|---|---|
+| `data-fit` | `cover` | `cover` fills the box and crops the overflow · `contain` fits the whole image and letterboxes it · `stretch` distorts to fill |
+| `data-align` | `center` | which part survives a `cover` crop: `center` `top` `bottom` `left` `right`. `top` is what a long page screenshot wants |
+| `data-shape` | `rect` | on `<image>` and `<img>` only: `rect` `rounded` `circle` `hex` |
+| `data-radius` | `16` | corner radius for `data-shape="rounded"` |
+
+- **Sources are local files.** A relative path resolves **against the HTML file's own
+  directory**, not the working directory; absolute paths and `file:` URLs work too. A remote
+  URL is refused: one that 404s or loads slowly leaves an invisible hole in a figure that
+  still screenshots as a success. `curl -fsSL -o image.png "…"` first.
+- **The bytes are inlined** as `data:` URIs into the temp copy before Chrome launches, so the
+  prepared page is self-contained and your source file is untouched. PNG, JPEG, GIF, WebP,
+  AVIF, BMP and SVG. HEIC and TIFF are refused with the command to convert them — Chrome
+  decodes neither.
+- **Every failure is fatal and pre-launch**, naming the path it resolved: a missing file, a
+  directory, an empty file, a file that is not an image whatever its extension, one over
+  12 MB, or a page whose images total more than 32 MB.
+- **An `<image>` needs an explicit `width` and `height`.** Sized only by its intrinsic
+  dimensions it is a coin flip across Chrome builds, and the losing side is an invisible
+  image inside a frame that drew perfectly. The error reports the image's natural size so you
+  can paste it in.
+- **`url()` in a `<style>` block or a `style=` attribute is inlined too**, so
+  `background-image: url(./hero.jpg)` works as written. A remote `url()` is passed through to
+  Chrome untouched, like the theme's font import.
+- **A plain `<img src>` is inlined and otherwise left exactly as written.** The `data-*`
+  vocabulary is opt-in; nothing here restyles markup that did not ask for it.
+- **The render reports what it placed** — name, pixel size, format, weight. Read that line:
+  it is the cheapest way to notice you just framed last week's screenshot.
+
+Discipline: an image is content, not furniture. One per figure carries a point; three compete
+for it. Crop to what matters with `data-align` rather than shrinking the whole thing so it
+fits, and caption a frame the way you would any other node. A raw rectangle of UI dropped on
+a themed ground reads as a mistake — put screenshots in a frame.
+
+## 7. Code snippets
 
 `$SKILL/templates/code.html` is a Carbon-style code window — surface, traffic dots, filename, a
 language chip — floating on the themed ground with a `--shadow` (a token, like every other
@@ -309,7 +369,7 @@ number. Escape `&`, `<`, `>` in the code text.
 in your head before shipping it. Rendered with `--transparent`, the window becomes a
 shadowed sticker for embedding anywhere.
 
-## 7. Layout discipline
+## 8. Layout discipline
 
 Check these before rendering, not after:
 
@@ -322,7 +382,7 @@ Check these before rendering, not after:
 - Three points per slide is the ceiling. A diagram that needs more than ~7 nodes is two
   diagrams.
 
-## 8. Presentations
+## 9. Presentations
 
 A deck is one HTML file per slide, numbered so order is explicit:
 
@@ -347,12 +407,13 @@ Keep one theme per deck. The footer's `NN / NN` is manual — update it per slid
 single file, combine the PNGs into a PDF with whatever the machine has
 (`magick out/*.png deck.pdf`, or print the folder from any viewer).
 
-## 9. QA checklist
+## 10. QA checklist
 
 Before delivering any image:
 
 - [ ] Rendered and **viewed** — not assumed
 - [ ] Code figures: highlighting spot-checked token by token; at most one `.hl` line
+- [ ] Images: the file the log named is the one you meant, and the crop kept the point
 - [ ] Transparent renders: viewed composited over a sample background, not just alone
 - [ ] No text touches a node edge, a line, or the canvas edge
 - [ ] Every line crossing is bridged

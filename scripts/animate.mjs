@@ -20,6 +20,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { TEMP_ROOT, assertPng, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
+import { describeImages, inlineImages } from './images.mjs'
 import { assertPartClasses, inlineParts } from './parts.mjs'
 import { decodePng, encodeGif } from './gif.mjs'
 
@@ -99,7 +100,13 @@ if (theme) {
 const parts = inlineParts(html, { onError: (m) => fail(m) })
 html = parts.html
 
-if (theme || parts.used.length) {
+// Every frame renders the same prepared copy, so an image is read and encoded
+// once here rather than once per frame.
+const images = inlineImages(html, inputDir, { onError: (m) => fail(m) })
+html = images.html
+for (const line of describeImages(images.used)) console.log(line)
+
+if (theme || parts.used.length || images.used.length) {
   workDir = makeWorkDir()
   source = join(workDir, 'page.html')
   const base = `<base href="${pathToFileURL(inputDir).href}/">`

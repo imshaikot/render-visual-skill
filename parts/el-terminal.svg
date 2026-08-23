@@ -1,6 +1,7 @@
 <!-- el-terminal · terminal window · 320×200 · anchor top-left.
-     The block cursor is f1; prompt chevrons are s1. -->
-<g>
+     The block cursor is f1; prompt chevrons are s1.
+     Screen: 318x162 under the bar. data-image at the call site fills it. -->
+<g data-screen="1 37 318 162 0 0 13 13">
   <rect class="node" width="320" height="200" rx="14" stroke-width="1"/>
   <path class="sline" d="M1 36 H319" stroke-width="1"/>
   <g class="ffaint" opacity="0.55">

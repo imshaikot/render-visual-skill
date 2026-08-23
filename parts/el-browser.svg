@@ -1,6 +1,7 @@
 <!-- el-browser · browser window · 320×200 · anchor top-left.
-     Stretch: outer rect, the y=44 bar line, the URL pill, and panel widths together. -->
-<g>
+     Stretch: outer rect, the y=44 bar line, the URL pill, and panel widths together.
+     Screen: 318x154 under the bar. data-image at the call site fills it. -->
+<g data-screen="1 45 318 154 0 0 13 13">
   <rect class="node" width="320" height="200" rx="14" stroke-width="1"/>
   <path class="sline" d="M1 44 H319" stroke-width="1"/>
   <g class="ffaint" opacity="0.55">
