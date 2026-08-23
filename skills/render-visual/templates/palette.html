@@ -1,0 +1,278 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal | blueprint | frost | neon | sepia.
+         If you copied this file out of the skill, copy the theme file beside it and use
+         href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 980px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+        color: var(--ink);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      .sheet { position: relative; padding: 44px 70px; }
+
+      .kicker { font: 500 14px var(--font-mono); color: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); color: var(--ink-faint); letter-spacing: 0.08em; }
+      .mono { font: 400 11.5px var(--font-mono); color: var(--ink-dim); }
+
+      /* header ─────────────────────────────────────────────────────────── */
+      .head { display: flex; align-items: baseline; justify-content: space-between; }
+      .name {
+        font: 500 13px var(--font-mono); color: var(--a1);
+        /* The canonical alpha idiom: one hue, two grades — a wash to sit on and a
+           border to hold it in. Both from --a1-raw, so they cannot drift from --a1. */
+        background: oklch(var(--a1-raw) / 12%);
+        border: 1px solid oklch(var(--a1-raw) / 45%);
+        border-radius: 999px; padding: 5px 14px;
+      }
+
+      /* type specimen ──────────────────────────────────────────────────── */
+      .type { display: flex; gap: 28px; margin-top: 26px; }
+      .spec {
+        flex: 1; background: var(--surface); border: 1px solid var(--line);
+        border-radius: 14px; padding: 18px 22px 20px; height: 168px;
+        display: flex; flex-direction: column; justify-content: space-between;
+      }
+      .aa { font: 600 62px/1 var(--font-display); letter-spacing: -0.02em; }
+      .aa.m { font: 500 54px/1 var(--font-mono); letter-spacing: -0.01em; }
+      .pangram { font: 500 19px var(--font-display); color: var(--ink-dim); }
+      .pangram.m { font: 400 15px var(--font-mono); }
+      .grad {
+        font: 700 30px var(--font-display); letter-spacing: -0.01em;
+        background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+
+      /* accent ladders ─────────────────────────────────────────────────── */
+      .body { display: flex; gap: 28px; margin-top: 26px; }
+      .ladders { flex: 1; }
+      .row { display: flex; align-items: flex-start; gap: 12px; margin-top: 12px; }
+      .rowlab { width: 176px; flex: none; padding-top: 8px; }
+      /* Token names are code: mono, and with ligatures off — Manrope and friends
+         fuse "--" into an en dash, which would print a token that does not exist. */
+      .rowlab b { display: block; font: 500 14px var(--font-mono); color: var(--ink); }
+      .kicker, .sec, .mono, .rowlab b, .nlab b { font-variant-ligatures: none; }
+      .rowlab span { display: block; font: 400 11px var(--font-mono); color: var(--ink-faint); margin-top: 2px; }
+      .chip { width: 84px; }
+      .chip i {
+        display: block; height: 52px; border-radius: 8px;
+        /* One accent, six alphas — every grade composed from the same components. */
+        background: oklch(var(--c) / var(--a));
+        box-shadow: inset 0 0 0 1px oklch(var(--c) / 22%);
+      }
+      .chip span {
+        display: block; margin-top: 5px; text-align: center;
+        font: 400 10.5px var(--font-mono); color: var(--ink-faint);
+      }
+      .r1 { --c: var(--a1-raw); } .r2 { --c: var(--a2-raw); }
+      .r3 { --c: var(--a3-raw); } .r4 { --c: var(--a4-raw); }
+      .use {
+        width: 132px; height: 52px; border-radius: 8px; margin-left: 6px;
+        display: flex; align-items: center; justify-content: center;
+        font: 500 11.5px var(--font-mono);
+        color: oklch(var(--c));
+        background: oklch(var(--c) / 12%);
+        border: 1px solid oklch(var(--c) / 45%);
+      }
+
+      /* neutral column ─────────────────────────────────────────────────── */
+      .neutrals { width: 268px; flex: none; }
+      .nrow { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+      .sw { width: 44px; height: 44px; border-radius: 8px; flex: none; box-shadow: inset 0 0 0 1px var(--line); }
+      .nlab b { display: block; font: 500 12.5px var(--font-mono); color: var(--ink); }
+      .nlab span { display: block; font: 400 11px var(--font-mono); color: var(--ink-faint); margin-top: 2px; }
+
+      /* parts band ─────────────────────────────────────────────────────── */
+      svg { position: relative; display: block; margin-top: 26px; }
+      .title { font: 600 20px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .secs { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part below relies only on these + the classes above */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         THEME SPECIMEN — a catalogue, not a deliverable. One page that renders
+         in every theme and labels itself from the tokens it was given:
+
+           node scripts/render.mjs templates/palette.html palette.png --theme neon
+
+         The alpha ladders are the point. Each grade is oklch(var(--aN-raw) / P%)
+         — the same components the solid token is built from, so a wash can never
+         drift from the colour it is a wash of.
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="sheet">
+      <div class="head">
+        <div class="kicker">RENDERCRAFT · THEME SPECIMEN — TOKENS, TYPE, ALPHA GRADES</div>
+        <div class="name" data-token="--theme-name">theme</div>
+      </div>
+
+      <div class="type">
+        <div class="spec">
+          <div class="sec">DISPLAY — TITLES ONLY</div>
+          <div class="aa">Ag</div>
+          <div class="pangram">Sphinx of black quartz, judge my vow</div>
+          <div class="mono" data-family="--font-display">display</div>
+        </div>
+        <div class="spec">
+          <div class="sec">MONO — LABELS, CHIPS, KICKERS, CODE</div>
+          <div class="aa m">Ag</div>
+          <div class="pangram m">0123456789 → &lt;/&gt; { } — ILl1 O0</div>
+          <div class="mono" data-family="--font-mono">mono</div>
+        </div>
+        <div class="spec">
+          <div class="sec">GRADIENT — ONE PHRASE PER IMAGE</div>
+          <div class="grad">the phrase that carries<br />the whole figure</div>
+          <div class="mono">--grad</div>
+        </div>
+      </div>
+
+      <div class="body">
+        <div class="ladders">
+          <div class="sec">ACCENTS &amp; ALPHA — oklch(var(--aN-raw) / P%) · one hue, any transparency</div>
+
+          <div class="row r1">
+            <div class="rowlab"><b>--a1</b><span>primary, forward paths</span></div>
+            <div class="chip" style="--a: 100%"><i></i><span>100%</span></div>
+            <div class="chip" style="--a: 60%"><i></i><span>60%</span></div>
+            <div class="chip" style="--a: 35%"><i></i><span>35%</span></div>
+            <div class="chip" style="--a: 20%"><i></i><span>20%</span></div>
+            <div class="chip" style="--a: 12%"><i></i><span>12%</span></div>
+            <div class="chip" style="--a: 6%"><i></i><span>6%</span></div>
+            <div class="use">wash 12 · edge 45</div>
+          </div>
+
+          <div class="row r2">
+            <div class="rowlab"><b>--a2</b><span>actions, what flows back</span></div>
+            <div class="chip" style="--a: 100%"><i></i><span>100%</span></div>
+            <div class="chip" style="--a: 60%"><i></i><span>60%</span></div>
+            <div class="chip" style="--a: 35%"><i></i><span>35%</span></div>
+            <div class="chip" style="--a: 20%"><i></i><span>20%</span></div>
+            <div class="chip" style="--a: 12%"><i></i><span>12%</span></div>
+            <div class="chip" style="--a: 6%"><i></i><span>6%</span></div>
+            <div class="use">wash 12 · edge 45</div>
+          </div>
+
+          <div class="row r3">
+            <div class="rowlab"><b>--a3</b><span>external, alternates</span></div>
+            <div class="chip" style="--a: 100%"><i></i><span>100%</span></div>
+            <div class="chip" style="--a: 60%"><i></i><span>60%</span></div>
+            <div class="chip" style="--a: 35%"><i></i><span>35%</span></div>
+            <div class="chip" style="--a: 20%"><i></i><span>20%</span></div>
+            <div class="chip" style="--a: 12%"><i></i><span>12%</span></div>
+            <div class="chip" style="--a: 6%"><i></i><span>6%</span></div>
+            <div class="use">wash 12 · edge 45</div>
+          </div>
+
+          <div class="row r4">
+            <div class="rowlab"><b>--a4</b><span>success, confirmation</span></div>
+            <div class="chip" style="--a: 100%"><i></i><span>100%</span></div>
+            <div class="chip" style="--a: 60%"><i></i><span>60%</span></div>
+            <div class="chip" style="--a: 35%"><i></i><span>35%</span></div>
+            <div class="chip" style="--a: 20%"><i></i><span>20%</span></div>
+            <div class="chip" style="--a: 12%"><i></i><span>12%</span></div>
+            <div class="chip" style="--a: 6%"><i></i><span>6%</span></div>
+            <div class="use">wash 12 · edge 45</div>
+          </div>
+        </div>
+
+        <div class="neutrals">
+          <div class="sec">GROUND, SURFACE, INK</div>
+          <div class="nrow">
+            <div class="sw" style="background: var(--ground)"></div>
+            <div class="nlab"><b>--ground</b><span data-token="--ground">·</span></div>
+          </div>
+          <div class="nrow">
+            <div class="sw" style="background: var(--surface)"></div>
+            <div class="nlab"><b>--surface</b><span data-token="--surface">·</span></div>
+          </div>
+          <div class="nrow">
+            <div class="sw" style="background: var(--line)"></div>
+            <div class="nlab"><b>--line</b><span data-token="--line">·</span></div>
+          </div>
+          <div class="nrow">
+            <div class="sw" style="background: var(--ink)"></div>
+            <div class="nlab"><b>--ink</b><span data-token="--ink">·</span></div>
+          </div>
+          <div class="nrow">
+            <div class="sw" style="background: var(--ink-dim)"></div>
+            <div class="nlab"><b>--ink-dim</b><span data-token="--ink-dim">·</span></div>
+          </div>
+          <div class="nrow">
+            <div class="sw" style="background: var(--ink-faint)"></div>
+            <div class="nlab"><b>--ink-faint</b><span data-token="--ink-faint">·</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The theme applied to real elements — referenced from parts/, never copied. -->
+    <svg width="1360" height="230" viewBox="0 0 1360 230" fill="none">
+      <text class="secs" x="70" y="14">IN USE — THE SAME PARTS, DRESSED BY THIS THEME</text>
+
+      <g data-part="el-chart-donut" transform="translate(70, 40)"/>
+      <g data-part="el-chart-bar" data-accent="2" transform="translate(238, 40)"/>
+      <g data-part="el-server" transform="translate(458, 32)"/>
+      <g data-part="el-shield" data-accent="3" transform="translate(634, 48)"/>
+      <g data-part="el-stat-tile" transform="translate(768, 54)"/>
+
+      <!-- glyph tiles: one per accent, so all four read side by side -->
+      <rect class="node" x="1010" y="72" width="48" height="48" rx="12" stroke-width="1"/>
+      <rect class="node" x="1078" y="72" width="48" height="48" rx="12" stroke-width="1"/>
+      <rect class="node" x="1146" y="72" width="48" height="48" rx="12" stroke-width="1"/>
+      <rect class="node" x="1214" y="72" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-bolt" transform="translate(1020, 82)"/>
+      <g data-part="g-key" data-accent="2" transform="translate(1088, 82)"/>
+      <g data-part="g-globe" data-accent="3" transform="translate(1156, 82)"/>
+      <g data-part="g-check" data-accent="4" transform="translate(1224, 82)"/>
+
+      <text class="sub" x="130" y="192" text-anchor="middle">el-chart-donut</text>
+      <text class="sub" x="328" y="192" text-anchor="middle">el-chart-bar · a2</text>
+      <text class="sub" x="528" y="192" text-anchor="middle">el-server</text>
+      <text class="sub" x="680" y="192" text-anchor="middle">el-shield · a3</text>
+      <text class="sub" x="868" y="192" text-anchor="middle">el-stat-tile</text>
+      <text class="sub" x="1136" y="192" text-anchor="middle">glyphs · a1–a4</text>
+
+      <text class="sub" x="70" y="222" opacity="0.75">Every value on this sheet comes from the theme file alone — nothing here is hard-coded, which is the whole point of a token.</text>
+    </svg>
+
+    <script>
+      // The sheet labels itself from the theme it was handed: a custom property's
+      // computed value already has its var() substituted, so --ground reads back as
+      // the colour, not as the reference. Fonts show the family that actually won.
+      const cs = getComputedStyle(document.documentElement)
+      const val = (n) => cs.getPropertyValue(n).trim()
+      for (const el of document.querySelectorAll('[data-token]')) {
+        el.textContent = val(el.dataset.token).replace(/^"|"$/g, '') || '—'
+      }
+      for (const el of document.querySelectorAll('[data-family]')) {
+        el.textContent = (val(el.dataset.family).split(',')[0] || '—').replace(/"/g, '')
+      }
+    </script>
+  </body>
+</html>
