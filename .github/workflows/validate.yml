@@ -1,0 +1,43 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  spec:
+    name: Agent Skills spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      # skills-ref enforces the rule that forced this layout: frontmatter `name`
+      # must equal the parent directory name. A rename that forgets to move the
+      # directory fails here rather than at someone's install.
+      - name: skills-ref validate
+        run: |
+          uvx --from "git+https://github.com/agentskills/agentskills#subdirectory=skills-ref" \
+            skills-ref validate skills/render-visual
+
+  invariants:
+    name: invariants (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      # Both runner images ship Google Chrome; this fails loudly if that changes,
+      # rather than letting the suite skip silently.
+      - name: locate a browser
+        shell: bash
+        run: node -e "import('./skills/render-visual/scripts/chrome.mjs').then(m => console.log(m.findChrome()))"
+      - name: selftest
+        shell: bash
+        run: node skills/render-visual/scripts/selftest.mjs

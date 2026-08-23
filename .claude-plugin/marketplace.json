@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "render-visual-skill",
+  "description": "Designed PNGs from HTML — diagrams, slides, social cards and code snippets",
+  "owner": {
+    "name": "Shahriar",
+    "url": "https://github.com/imshaikot"
+  },
+  "plugins": [
+    {
+      "name": "render-visual-skill",
+      "source": "./",
+      "description": "Produce polished diagrams, presentation slides, social cards and code snippets as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Four swappable themes, animated sequence GIFs, zero npm dependencies.",
+      "category": "design",
+      "author": { "name": "Shahriar" },
+      "homepage": "https://github.com/imshaikot/render-visual-skill"
+    }
+  ]
+}

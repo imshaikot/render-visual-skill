@@ -1,0 +1,41 @@
+name: publish
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# The skill lives at skills/render-visual/ because the Agent Skills spec requires
+# the directory name to match the frontmatter name. That nesting would break the
+# one-line install for every non-plugin agent, since a plain clone would not put
+# SKILL.md where the agent looks. So each tag republishes the subtree as the
+# `skill` branch, whose root IS the skill:
+#
+#   git clone --depth 1 -b skill <repo> ~/.agents/skills/render-visual
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # subtree split needs the whole history to be deterministic
+
+      - name: verify the tag matches the manifests
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          plugin=$(node -p "require('./.claude-plugin/plugin.json').version")
+          skill=$(sed -n 's/^  version: "\(.*\)"$/\1/p' skills/render-visual/SKILL.md)
+          echo "tag=$tag plugin.json=$plugin SKILL.md=$skill"
+          test "$tag" = "$plugin" || { echo "::error::tag $tag != plugin.json $plugin"; exit 1; }
+          test "$tag" = "$skill"  || { echo "::error::tag $tag != SKILL.md $skill";  exit 1; }
+
+      - name: split skills/render-visual onto the skill branch
+        run: |
+          git subtree split --prefix=skills/render-visual --branch skill
+          # No --force: the split is deterministic from an unchanged history, so a
+          # fast-forward is expected. A rejected push means history was rewritten,
+          # which would break `git pull --ff-only` for everyone already installed —
+          # better to fail here and decide deliberately.
+          git push origin skill
