@@ -90,13 +90,20 @@ function procLines() {
         '@(Get-CimInstance Win32_Process) | ForEach-Object { "$($_.ProcessId) $($_.CommandLine)" }',
       ], { encoding: 'utf8' })
     : spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' })
-  if (r.error || typeof r.stdout !== 'string') {
+  // Three ways to come back empty, and all of them have to be fatal, because an
+  // empty list makes every orphan assertion pass by seeing nothing:
+  //   - error:  the binary is missing (spawnSync reports, never throws)
+  //   - status: it ran and refused — a bad flag, a PowerShell execution policy
+  //   - empty:  it succeeded but printed nothing, which no real process table does
+  const lines = typeof r.stdout === 'string' ? r.stdout.split('\n').filter(Boolean) : []
+  if (r.error || r.status !== 0 || lines.length === 0) {
+    const why = r.error?.code ?? (r.status !== 0 ? `exit ${r.status}` : 'no processes listed')
     throw new Error(
-      `process probe failed (${r.error?.code ?? 'no stdout'}). Without it every assertion ` +
-        'about orphaned Chromes would pass by seeing nothing, so this is fatal.',
+      `process probe failed (${why}). Without it every assertion about orphaned ` +
+        'Chromes would pass by seeing nothing, so this is fatal.',
     )
   }
-  return r.stdout.split('\n')
+  return lines
 }
 
 // join(), not a literal '/': on Windows the profile path Chrome was launched with
