@@ -20,6 +20,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { TEMP_ROOT, assertPng, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
+import { assertPartClasses, inlineParts } from './parts.mjs'
 import { decodePng, encodeGif } from './gif.mjs'
 
 const USAGE = 'animate.mjs <input.html> <output.gif> [--theme name] [--scale 1] [--size WxH] [--fx slide|fade|pop] [--fps 25] [--transition 450] [--delay 900] [--hold 2600] [--jobs 4] [--keep-frames]'
@@ -92,6 +93,13 @@ if (theme) {
     )
   }
   html = html.replace(tag, `<style>\n${readFileSync(theme.file, 'utf8')}\n</style>`)
+}
+
+// After the theme, so the CSS check sees the stylesheet the frames render with.
+const parts = inlineParts(html, { onError: (m) => fail(m) })
+html = parts.html
+
+if (theme || parts.used.length) {
   workDir = makeWorkDir()
   source = join(workDir, 'page.html')
   const base = `<base href="${pathToFileURL(inputDir).href}/">`
@@ -105,6 +113,7 @@ if (theme) {
 // Before any Chrome starts: one blank frame would poison the whole GIF.
 try {
   assertStylesheets(html, inputDir)
+  assertPartClasses(html, parts.used, inputDir)
 } catch (err) {
   console.error(err.message)
   process.exit(1)

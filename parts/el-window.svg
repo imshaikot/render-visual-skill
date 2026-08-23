@@ -1,0 +1,16 @@
+<!-- el-window · app/desktop window · 280×200 · anchor top-left.
+     Stretch: outer rect width, the y=40 bar line, and skeleton widths move together. -->
+<g>
+  <rect class="node" width="280" height="200" rx="14" stroke-width="1"/>
+  <path class="sline" d="M1 40 H279" stroke-width="1"/>
+  <g class="ffaint" opacity="0.55">
+    <circle cx="22" cy="20" r="4.5"/><circle cx="40" cy="20" r="4.5"/><circle cx="58" cy="20" r="4.5"/>
+  </g>
+  <rect class="ffaint" opacity="0.3" x="104" y="15" width="72" height="9" rx="4.5"/>
+  <rect class="ffaint" opacity="0.5" x="24" y="64" width="110" height="10" rx="5"/>
+  <rect class="ffaint" opacity="0.28" x="24" y="92" width="232" height="7" rx="3.5"/>
+  <rect class="ffaint" opacity="0.28" x="24" y="108" width="196" height="7" rx="3.5"/>
+  <rect class="ffaint" opacity="0.28" x="24" y="124" width="214" height="7" rx="3.5"/>
+  <rect class="s1" x="24" y="152" width="80" height="26" rx="13" stroke-width="1.6"/>
+  <rect class="f1" opacity="0.85" x="44" y="162" width="40" height="6" rx="3"/>
+</g>

@@ -1,0 +1,5 @@
+<!-- el-chart-gauge · gauge / meter · 130×80 · anchor top-left · schematic, one value (68%) in a1 · data-accent recolours it · centre is free for a <text> reading -->
+<g>
+  <path class="sfaint" opacity="0.22" fill="none" stroke-width="12" stroke-linecap="round" d="M11 68 A54 54 0 0 1 119 68"/>
+  <path class="s1" fill="none" stroke-width="12" stroke-linecap="round" d="M11 68 A54 54 0 0 1 93.93 22.41"/>
+</g>

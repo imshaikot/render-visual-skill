@@ -1,0 +1,7 @@
+<!-- g-chip · 28×28 glyph · anchor top-left · compute, a runtime, an embedded target -->
+<g class="s1 glyph">
+  <rect x="7" y="7" width="14" height="14" rx="2.5"/>
+  <rect x="11.5" y="11.5" width="5" height="5"/>
+  <path d="M10 7 V4 M14 7 V4 M18 7 V4 M10 21 v3 M14 21 v3 M18 21 v3"/>
+  <path d="M7 10 H4 M7 14 H4 M7 18 H4 M21 10 h3 M21 14 h3 M21 18 h3"/>
+</g>

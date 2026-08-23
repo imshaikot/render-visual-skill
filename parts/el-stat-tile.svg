@@ -1,0 +1,8 @@
+<!-- el-stat-tile · KPI tile · 200×96 · anchor top-left · replace both <text> values; the delta chip is f4 for up, recolour to f3 for down -->
+<g>
+  <rect class="node" width="200" height="96" rx="12" stroke-width="1"/>
+  <text class="sub" x="16" y="30" font-size="11">MONTHLY ACTIVE</text>
+  <text class="title" x="16" y="72" font-size="32">48.2K</text>
+  <rect class="f4" opacity="0.14" x="128" y="16" width="56" height="22" rx="11"/>
+  <text class="sub f4" x="156" y="31" font-size="11" text-anchor="middle">+12%</text>
+</g>

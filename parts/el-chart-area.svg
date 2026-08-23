@@ -1,0 +1,8 @@
+<!-- el-chart-area · area chart · 180×120 · anchor top-left · schematic, one series in a1 · data-accent recolours it -->
+<g>
+  <path class="sline" opacity="0.55" stroke-width="1" d="M8 44 H178"/>
+  <path class="sline" opacity="0.55" stroke-width="1" d="M8 74 H178"/>
+  <path class="sline" stroke-width="1" d="M8 6 V104 H178"/>
+  <path class="f1" opacity="0.22" d="M20 104 L20 84 L50 58 L80 68 L110 36 L141 46 L172 20 L172 104 Z"/>
+  <path class="s1" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 84 L50 58 L80 68 L110 36 L141 46 L172 20"/>
+</g>

@@ -1,0 +1,38 @@
+<!-- el-chart-heatmap · heatmap · 168×116 · anchor top-left · schematic, one sequential series in a1 at graded opacity · data-accent recolours it -->
+<g>
+  <rect class="f1" opacity="0.14" x="2" y="2" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.22" x="26" y="2" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.16" x="50" y="2" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.45" x="74" y="2" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.3" x="98" y="2" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.18" x="122" y="2" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.12" x="146" y="2" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.24" x="2" y="26" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.55" x="26" y="26" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.38" x="50" y="26" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.7" x="74" y="26" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.48" x="98" y="26" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.26" x="122" y="26" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.2" x="146" y="26" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.32" x="2" y="50" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.72" x="26" y="50" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.9" x="50" y="50" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.85" x="74" y="50" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.62" x="98" y="50" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.4" x="122" y="50" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.28" x="146" y="50" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.18" x="2" y="74" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.44" x="26" y="74" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.66" x="50" y="74" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.58" x="74" y="74" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.75" x="98" y="74" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.34" x="122" y="74" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.22" x="146" y="74" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.13" x="2" y="98" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.2" x="26" y="98" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.3" x="50" y="98" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.36" x="74" y="98" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.26" x="98" y="98" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.16" x="122" y="98" width="20" height="20" rx="4"/>
+  <rect class="f1" opacity="0.14" x="146" y="98" width="20" height="20" rx="4"/>
+</g>

@@ -1,0 +1,5 @@
+<!-- g-clock · 28×28 glyph · anchor top-left · a schedule, a timeout, a cron job -->
+<g class="s1 glyph">
+  <circle cx="14" cy="14" r="10"/>
+  <path d="M14 8.5 V14 l4 2.5"/>
+</g>

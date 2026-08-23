@@ -78,7 +78,7 @@ export function findThemeLink(html, names = listThemes()) {
 
 /* ── Argument parsing ───────────────────────────────────────────────────── */
 
-const distance = (a, b) => {
+export const distance = (a, b) => {
   // Levenshtein, small enough to inline and only ever run on a typo path.
   const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
   for (let j = 0; j <= b.length; j++) d[0][j] = j

@@ -1,0 +1,21 @@
+<!-- el-server · rack · 140×140 · anchor top-left. LEDs: f4 = healthy. -->
+<g>
+  <rect class="node" width="140" height="140" rx="12" stroke-width="1"/>
+  <path class="sline" d="M1 47.5 H139" stroke-width="1"/>
+  <path class="sline" d="M1 93.5 H139" stroke-width="1"/>
+  <g>
+    <circle class="f4" cx="20" cy="24" r="2.5"/><circle class="ffaint" opacity="0.5" cx="32" cy="24" r="2.5"/>
+    <rect class="ffaint" opacity="0.3" x="88" y="18" width="34" height="4" rx="2"/>
+    <rect class="ffaint" opacity="0.3" x="88" y="26" width="34" height="4" rx="2"/>
+  </g>
+  <g>
+    <circle class="f4" cx="20" cy="70.5" r="2.5"/><circle class="ffaint" opacity="0.5" cx="32" cy="70.5" r="2.5"/>
+    <rect class="ffaint" opacity="0.3" x="88" y="64.5" width="34" height="4" rx="2"/>
+    <rect class="ffaint" opacity="0.3" x="88" y="72.5" width="34" height="4" rx="2"/>
+  </g>
+  <g>
+    <circle class="f4" cx="20" cy="116.5" r="2.5"/><circle class="ffaint" opacity="0.5" cx="32" cy="116.5" r="2.5"/>
+    <rect class="ffaint" opacity="0.3" x="88" y="110.5" width="34" height="4" rx="2"/>
+    <rect class="ffaint" opacity="0.3" x="88" y="118.5" width="34" height="4" rx="2"/>
+  </g>
+</g>

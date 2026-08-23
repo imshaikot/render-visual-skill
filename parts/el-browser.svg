@@ -1,0 +1,14 @@
+<!-- el-browser · browser window · 320×200 · anchor top-left.
+     Stretch: outer rect, the y=44 bar line, the URL pill, and panel widths together. -->
+<g>
+  <rect class="node" width="320" height="200" rx="14" stroke-width="1"/>
+  <path class="sline" d="M1 44 H319" stroke-width="1"/>
+  <g class="ffaint" opacity="0.55">
+    <circle cx="22" cy="22" r="4.5"/><circle cx="40" cy="22" r="4.5"/><circle cx="58" cy="22" r="4.5"/>
+  </g>
+  <rect class="fground sline" x="76" y="11" width="222" height="22" rx="11" stroke-width="1"/>
+  <rect class="ffaint" opacity="0.35" x="90" y="19" width="104" height="6" rx="3"/>
+  <rect class="fline" x="24" y="66" width="272" height="56" rx="8"/>
+  <rect class="fline" x="24" y="134" width="130" height="44" rx="8"/>
+  <rect class="fline" x="166" y="134" width="130" height="44" rx="8"/>
+</g>

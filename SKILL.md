@@ -20,7 +20,8 @@ file instead of hand-picked colors.
 | `$SKILL/templates/card.html` | 1200×630 | Social/og cards: mark, headline, one-paragraph pitch, chips, bottom rule |
 | `$SKILL/templates/sequence.html` | 1360×740 | Sequence diagrams: lifelines, calls and returns, activations — static, or animated step by step |
 | `$SKILL/templates/code.html` | 1360×740 | Code snippets in a themed window (Carbon-style): hand-highlighted tokens, line numbers, a highlight line, diff rows — see §6 |
-| `$SKILL/templates/elements.html` | parts sheet | Copy-paste elements: app/browser/terminal/phone frames, database, server, queue, cloud, router, actor, shield, and a 22-glyph icon set. Never a deliverable — see §5 |
+| `$SKILL/templates/charts.html` | parts sheet | Browsable catalogue of the chart and BI parts — pie, donut, bar, line, area, stacked, scatter, funnel, gauge, heatmap, sparkline, KPI tile, table, dashboard. Schematic figures, not plotted data — see §5 |
+| `$SKILL/templates/elements.html` | parts sheet | Browsable catalogue of the frames, infrastructure shapes and icon glyphs in `$SKILL/parts/`. Reference them, don't copy them. Never a deliverable — see §5 |
 
 | Theme | Mood | Fonts |
 |---|---|---|
@@ -95,6 +96,8 @@ node "$SKILL/scripts/render.mjs" <input.html> <output.png> [--size WxH] [--scale
   (pick `paper` over light surroundings, a dark theme over dark). Note `--surface` keeps its
   8% translucency, so a busy backdrop shows through faintly — a frosted-glass look; if that
   fights the content, place the PNG on a calmer area.
+- **`<g data-part="...">` is replaced with that part's markup** from `$SKILL/parts/` before
+  the render, so a figure references shapes instead of carrying copies of them. See §5.
 - **A missing local stylesheet is fatal, and checked before Chrome launches.** Every color
   is a theme token, so a broken `<link>` does not degrade the render — it empties it, into a
   blank white page that screenshots as a perfect success. Passing `--theme` sidesteps this
@@ -132,8 +135,8 @@ Two scripts back the guarantees above. Neither is needed for a normal render.
 ```bash
 node "$SKILL/scripts/doctor.mjs"            # preflight: reap orphans, clear stale locks, report
 node "$SKILL/scripts/doctor.mjs" --prune    # also delete idle warm profiles to reclaim disk
-node "$SKILL/scripts/selftest.mjs"          # ~60s: assert every concurrency and cleanup invariant
-node "$SKILL/scripts/selftest.mjs" --quick  # ~45s: same, minus the animation test
+node "$SKILL/scripts/selftest.mjs"          # ~2m: assert every concurrency and cleanup invariant
+node "$SKILL/scripts/selftest.mjs" --quick  # ~90s: same, minus the animation test
 ```
 
 Reach for `doctor.mjs` when renders fail with *"is another instance using profile"* — that
@@ -211,27 +214,68 @@ anything technical. Kickers are small mono, letter-spaced, uppercase, `--ink-fai
 
 ## 5. The element library
 
-`$SKILL/templates/elements.html` is a parts sheet, not a canvas: render it only to browse what
-exists. Every part is a self-contained `<g id="el-…">` (shapes and frames) or
-`<g id="g-…">` (28×28 glyphs), anchored at its own top-left, built purely from theme
-tokens — so it matches whatever theme the page links, like everything else here.
+`$SKILL/parts/` holds 55 ready-made pieces, one `.svg` per part, each a single `<g>` anchored
+at its own top-left and built purely from theme tokens. **Reference one instead of copying
+it** — a `data-part` attribute is replaced with the part's markup at render time:
 
-To use a part:
+```html
+<g data-part="el-database" transform="translate(70,452)"/>
+<g data-part="g-key" data-accent="3" transform="translate(20,30)"/>
+```
 
-1. Copy the group into your figure's `<svg>` and place it with `transform="translate(x,y)"`.
-2. Make sure the page's `<style>` has the `/* element utilities */` block
-   (`.sline .fline .sfaint .ffaint .fground .glyph` plus `s4`/`f4`) — `diagram.html` and
-   `sequence.html` already carry it; copy it from `elements.html` into anything older.
-3. Recolor by swapping the accent class on the part's accent pieces (`s1` → `s2`/`s3`/`s4`).
-   The neutral frame never changes — accents stay semantic (§4).
+| | |
+|---|---|
+| Frames | `el-window` `el-browser` `el-terminal` `el-phone` |
+| Shapes | `el-database` `el-server` `el-queue` `el-cloud` `el-router` `el-actor` `el-shield` |
+| Charts | `el-chart-pie` `el-chart-donut` `el-chart-bar` `el-chart-hbar` `el-chart-line` `el-chart-area` `el-chart-stacked` `el-chart-scatter` `el-chart-funnel` `el-chart-gauge` `el-chart-heatmap` `el-sparkline` |
+| BI | `el-dashboard` `el-stat-tile` `el-table` |
+| Glyphs (28×28) | `g-user` `g-users` `g-db` `g-cloud` `g-gear` `g-lock` `g-key` `g-globe` `g-bolt` `g-mail` `g-clock` `g-term` `g-file` `g-mobile` `g-screen` `g-api` `g-chip` `g-layers` `g-net` `g-search` `g-check` `g-warn` `g-chart-pie` `g-chart-bar` `g-chart-line` `g-gauge` `g-dashboard` `g-filter` `g-table` |
 
-Frames (`el-window`, `el-browser`, `el-terminal`, `el-phone`) are nodes in their own right:
-caption them with a `.title`/`.sub` pair beneath, or replace the faint skeleton bars with
-real mono `<text>` when the content matters. The comment above each part records its
-footprint and which coordinates move together when you stretch it.
+`cat "$SKILL/parts/el-server.svg"` shows one part's footprint and which coordinates move
+together when you stretch it. To see them drawn, render `templates/elements.html` (frames,
+shapes, glyphs) or `templates/charts.html` (charts and BI) — catalogues, never deliverables,
+and both built from the same includes.
 
-Glyphs drop into a standard node card at `transform="translate(20,30)"`, replacing the
-stock circle glyph; they inherit stroke 1.6 and round caps from `.glyph`.
+- **`data-accent="1..4"`** recolors the part's accent pieces to `--a1`…`--a4` (§4). Anything
+  the part colors deliberately — `el-server`'s health LEDs are `f4` — is left alone, as is
+  the neutral frame. Putting an accent class in `class=` instead is fatal: which one won
+  would be CSS source order rather than intent.
+- **An accent the part already uses is fatal.** `data-accent="4"` on `el-server` would paint
+  the rack the same colour as its LEDs; on a multi-series chart it would merge two series.
+  Single-series parts (`el-chart-bar`, `-line`, `-area`, `-hbar`, `-gauge`, `-heatmap`,
+  `el-sparkline`) recolor freely; the multi-series ones carry `a1`–`a4` **as** the series and
+  refuse the accents they already spend.
+- **Call-site attributes win** over the part's own, and anything you nest inside the call
+  site is kept after the part's markup — so a caption can ride along with the shape:
+
+  ```html
+  <g data-part="el-window" transform="translate(70,124)"><text class="title" x="0" y="228">Editor</text></g>
+  ```
+- **The page must define the element utilities** — `.node`, `.s1`–`.s4`, `.f1`–`.f4`,
+  `.sline .fline .sfaint .ffaint .fground .glyph`. `diagram.html`, `sequence.html` and
+  `elements.html` already carry the block. A page missing them is fatal before Chrome
+  launches, because parts carry no color of their own and undefined utilities render as
+  invisible or unstroked shapes on an otherwise perfect PNG.
+- An unknown part id is fatal too, and lists what exists.
+
+Frames are nodes in their own right: caption them with a `.title`/`.sub` pair beneath, or
+replace the faint skeleton bars with real mono `<text>` when the content matters. Glyphs drop
+into a standard node card at `transform="translate(20,30)"` in place of the stock circle
+glyph; they inherit stroke 1.6 and round caps from `.glyph`.
+
+**The chart parts are schematics of charts, not charts.** Every proportion in them is fixed
+and arbitrary — `el-chart-pie` is always 40/25/20/15, `el-chart-gauge` always reads 68%. They
+exist to say *"a dashboard goes here"* in an architecture figure, the way `el-database` says
+*"a database goes here"*. Never present one as data. If the numbers are the point, edit the
+geometry to the real values and say so, or plot the dataset with a real charting library —
+that is still the answer this skill's own description gives for data charts.
+
+Charts are also the one place accents are **categorical rather than semantic** (§4): in
+`el-chart-pie`, `a1`–`a4` are series 1–4, not "primary / action / external / success". That
+exception stops at the chart's edge — the arrows and nodes around it keep their meanings.
+
+Copying a part's geometry into your figure still works and renders identically — reach for it
+only when you need to edit the shape itself.
 
 ## 6. Code snippets
 

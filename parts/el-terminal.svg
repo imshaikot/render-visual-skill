@@ -1,0 +1,16 @@
+<!-- el-terminal · terminal window · 320×200 · anchor top-left.
+     The block cursor is f1; prompt chevrons are s1. -->
+<g>
+  <rect class="node" width="320" height="200" rx="14" stroke-width="1"/>
+  <path class="sline" d="M1 36 H319" stroke-width="1"/>
+  <g class="ffaint" opacity="0.55">
+    <circle cx="22" cy="18" r="4.5"/><circle cx="40" cy="18" r="4.5"/><circle cx="58" cy="18" r="4.5"/>
+  </g>
+  <path class="s1 glyph" stroke-width="1.8" d="M24 56 l7 6 -7 6"/>
+  <rect class="ffaint" opacity="0.45" x="44" y="59" width="118" height="7" rx="3.5"/>
+  <rect class="ffaint" opacity="0.25" x="24" y="88" width="186" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.25" x="24" y="102" width="152" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.25" x="24" y="116" width="204" height="6" rx="3"/>
+  <path class="s1 glyph" stroke-width="1.8" d="M24 140 l7 6 -7 6"/>
+  <rect class="f1" x="44" y="141" width="9" height="14"/>
+</g>
