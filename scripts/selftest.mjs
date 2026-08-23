@@ -66,11 +66,46 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 // hunting for known patterns.
 const isoState = join(iso, 'render-visual')
 
-/** Chrome processes holding one of THIS suite's profile slots. */
-const isoChromes = () => {
-  const out = spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }).stdout || ''
-  return out.split('\n').filter((l) => l.includes(`--user-data-dir=${isoState}/profile`))
+const WIN = process.platform === 'win32'
+
+/**
+ * One line per process, `"<pid> <full command line>"`.
+ *
+ * Git Bash ships the Cygwin `ps` — `ps [-aeflsW]`, no `-o` — and even `-W -f`
+ * prints a native process's image path without its arguments, so it can never
+ * see a `--user-data-dir`. `wmic` is gone from the current runner image, which
+ * leaves CIM as the only thing on the box that reports a command line.
+ *
+ * Throws rather than returning nothing. `spawnSync` does not throw for a missing
+ * binary — it hands back `{ error: ENOENT, stdout: undefined }` — so the previous
+ * `.stdout || ''` turned "I cannot see" into "I see no Chromes". That made every
+ * orphan assertion vacuously true on Windows: T5 reported PASS while testing
+ * nothing at all, and T4 and T6 failed for a reason that had nothing to do with
+ * the behaviour under test.
+ */
+function procLines() {
+  const r = WIN
+    ? spawnSync('powershell.exe', [
+        '-NoProfile', '-NonInteractive', '-Command',
+        '@(Get-CimInstance Win32_Process) | ForEach-Object { "$($_.ProcessId) $($_.CommandLine)" }',
+      ], { encoding: 'utf8' })
+    : spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' })
+  if (r.error || typeof r.stdout !== 'string') {
+    throw new Error(
+      `process probe failed (${r.error?.code ?? 'no stdout'}). Without it every assertion ` +
+        'about orphaned Chromes would pass by seeing nothing, so this is fatal.',
+    )
+  }
+  return r.stdout.split('\n')
 }
+
+// join(), not a literal '/': on Windows the profile path Chrome was launched with
+// carries backslashes, so a hard-coded forward slash matches nothing even once the
+// probe can see. `profile` is a prefix of `profile-1`, so this catches every slot.
+const PROFILE_NEEDLE = `--user-data-dir=${join(isoState, 'profile')}`
+
+/** Chrome processes holding one of THIS suite's profile slots. */
+const isoChromes = () => procLines().filter((l) => l.includes(PROFILE_NEEDLE))
 const ls = (dir, re) => {
   try { return readdirSync(dir).filter((n) => re.test(n)) } catch { return [] }
 }
@@ -85,7 +120,11 @@ const isoTop = (re) => ls(iso, re)
  * teardown has to reap before it deletes, on every exit path.
  */
 const killIsoChromes = () => {
-  for (const line of isoChromes()) {
+  // Teardown must never throw: it runs from the exit handler, and a probe failure
+  // here would replace a real test result with a crash on the way out.
+  let lines = []
+  try { lines = isoChromes() } catch { return }
+  for (const line of lines) {
     const pid = Number(line.trim().split(/\s+/)[0])
     if (Number.isFinite(pid) && pid > 0) { try { process.kill(pid, 'SIGKILL') } catch {} }
   }
@@ -112,10 +151,15 @@ async function until(pred, ms = 20_000) {
 const results = []
 /** Long enough for the slowest invariant (the animation) on a cold Windows runner. */
 const TIMEOUT = 180_000
-async function test(name, fn, { timeout = TIMEOUT } = {}) {
+async function test(name, fn, { skip = null, timeout = TIMEOUT } = {}) {
   const started = Date.now()
   const n = String(results.length + 1)
   process.stdout.write(`[T${n}] ${name} … `)
+  if (skip) {
+    console.log(`SKIP — ${skip}`)
+    results.push({ name, ok: true, skipped: true })
+    return
+  }
   try {
     // A test that hangs must fail by name. Without this the suite dies on an
     // unsettled await, and the log ends mid-line with exit code 13.
@@ -218,6 +262,15 @@ await test('an unowned Chrome on a slot is reaped, not tripped over', async () =
     try { process.kill(orphan.pid, 'SIGCONT') } catch {}
     try { process.kill(orphan.pid, 'SIGKILL') } catch {}
   }
+}, {
+  // The only invariant here that Windows genuinely cannot express, on three
+  // counts: Chrome drops no `SingletonLock` symlink there (it uses a lockfile),
+  // there is no SIGSTOP to wedge the holder with, and the behaviour under test —
+  // killProfileHolders reaping a Chrome nobody owns — is a documented no-op on
+  // win32, where Chrome reports "another instance is using the profile" instead.
+  // T5 and T6 stay enabled: their earlier Windows results were an artefact of a
+  // blind process probe, not of the platform.
+  skip: WIN ? 'POSIX only: no SingletonLock, no SIGSTOP, and killProfileHolders is a no-op on win32' : null,
 })
 
 await test('SIGTERM at any point in startup leaves no orphan', async () => {
@@ -369,7 +422,17 @@ await test('an impossible render fails fast instead of relaunching Chrome', asyn
 /* ───────────────────────────────────────────────────────────────────────── */
 
 const failed = results.filter((r) => !r.ok)
-console.log(`\n${results.length - failed.length}/${results.length} invariants hold${keep ? `  (scratch kept at ${root})` : ''}`)
+const skipped = results.filter((r) => r.skipped)
+// Skips are counted separately rather than folded into the pass tally: "16/16
+// hold" on a platform where three were never run is the kind of green that hides
+// a regression.
+const held = results.length - failed.length - skipped.length
+console.log(
+  `\n${held}/${results.length - skipped.length} invariants hold` +
+    (skipped.length ? `, ${skipped.length} skipped on ${process.platform}` : '') +
+    (keep ? `  (scratch kept at ${root})` : ''),
+)
+if (skipped.length) console.log(`skipped: ${skipped.map((s) => s.name).join('; ')}`)
 if (failed.length) {
   console.log(`failed: ${failed.map((f) => f.name).join('; ')}`)
   process.exit(1)
