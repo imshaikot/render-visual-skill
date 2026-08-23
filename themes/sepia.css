@@ -1,0 +1,32 @@
+/* rendercraft theme: sepia — aged press. Cream stock, brown ink, typewriter mono. */
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Courier+Prime:wght@400;700&display=swap');
+:root {
+  --theme-name: "sepia";
+  /* Components first — see ember.css for the contract: oklch(var(--a1-raw) / 20%). */
+  --ground-raw: 0.93 0.024 82;
+  --surface-raw: 0.965 0.016 84;
+  --ink-raw: 0.31 0.035 55;
+  --a1-raw: 0.48 0.13 42;    /* burnt sienna — primary, forward paths */
+  --a2-raw: 0.46 0.07 215;   /* faded indigo — actions, returns */
+  --a3-raw: 0.43 0.14 22;    /* oxblood — external, alerts */
+  --a4-raw: 0.5 0.09 135;    /* olive — success */
+
+  --ground: oklch(var(--ground-raw));
+  --surface: oklch(var(--surface-raw));
+  --line: oklch(0.35 0.04 60 / 24%);
+  --ink: oklch(var(--ink-raw));
+  --ink-dim: oklch(0.47 0.035 55);
+  --ink-faint: oklch(0.6 0.03 62);
+  --a1: oklch(var(--a1-raw));
+  --a2: oklch(var(--a2-raw));
+  --a3: oklch(var(--a3-raw));
+  --a4: oklch(var(--a4-raw));
+  --grad: linear-gradient(100deg, oklch(0.31 0.035 55) 10%, oklch(0.48 0.13 42) 90%);
+  --glow1: transparent;
+  --glow2: transparent;
+  --glow-opacity: 0;
+  --dot: oklch(0.35 0.04 60 / 11%);
+  --shadow: 0 22px 50px -24px oklch(0.35 0.05 60 / 0.3);
+  --font-display: "Newsreader", Georgia, serif;
+  --font-mono: "Courier Prime", "Courier New", monospace;
+}

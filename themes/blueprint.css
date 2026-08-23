@@ -1,0 +1,33 @@
+/* rendercraft theme: blueprint — cyanotype drafting. Chalk on a deep drawing board. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+:root {
+  --theme-name: "blueprint";
+  /* Components first — see ember.css for the contract: oklch(var(--a1-raw) / 20%). */
+  --ground-raw: 0.272 0.052 252;
+  --surface-raw: 0.328 0.05 252;
+  --ink-raw: 0.975 0.012 240;
+  --a1-raw: 0.87 0.1 215;    /* chalk cyan — primary, forward paths */
+  --a2-raw: 0.79 0.15 62;    /* drafting orange — actions, returns */
+  --a3-raw: 0.72 0.17 18;    /* red pencil — external, revisions */
+  --a4-raw: 0.86 0.14 165;   /* verdigris — success */
+
+  --ground: oklch(var(--ground-raw));
+  --surface: oklch(var(--surface-raw) / 90%);
+  --line: oklch(0.98 0.012 240 / 24%);
+  --ink: oklch(var(--ink-raw));
+  --ink-dim: oklch(0.84 0.028 235);
+  --ink-faint: oklch(0.7 0.04 238);
+  --a1: oklch(var(--a1-raw));
+  --a2: oklch(var(--a2-raw));
+  --a3: oklch(var(--a3-raw));
+  --a4: oklch(var(--a4-raw));
+  --grad: linear-gradient(100deg, oklch(0.975 0.012 240) 6%, oklch(0.87 0.1 215) 92%);
+  --glow1: oklch(var(--a1-raw));
+  --glow2: oklch(0.62 0.13 262);
+  --glow-opacity: 0.14;
+  /* The dot lattice does real work here: it is the drafting grid. */
+  --dot: oklch(0.98 0.012 240 / 20%);
+  --shadow: 0 30px 70px -22px oklch(0.12 0.05 258 / 0.6);
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", monospace;
+}
