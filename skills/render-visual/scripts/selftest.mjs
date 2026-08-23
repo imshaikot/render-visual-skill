@@ -47,7 +47,17 @@ writeFileSync(
 
 const env = { ...process.env, TMPDIR: iso, TMP: iso, TEMP: iso }
 const render = (...args) => spawnSync(process.execPath, [join(SCRIPTS, 'render.mjs'), ...args], { cwd: work, env, encoding: 'utf8' })
-const renderBg = (...args) => spawn(process.execPath, [join(SCRIPTS, 'render.mjs'), ...args], { cwd: work, env, stdio: 'ignore' })
+/**
+ * `closed` is attached at spawn, never at the point a test wants to wait. A render
+ * that finished before the test got there has already emitted 'close', and a
+ * listener added afterwards never fires: the await never settles, the loop drains,
+ * and node exits 13 with no failing test named.
+ */
+const renderBg = (...args) => {
+  const child = spawn(process.execPath, [join(SCRIPTS, 'render.mjs'), ...args], { cwd: work, env, stdio: 'ignore' })
+  child.closed = new Promise((res) => child.once('close', res))
+  return child
+}
 const sha = (f) => createHash('sha256').update(readFileSync(join(work, f))).digest('hex').slice(0, 16)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -100,12 +110,20 @@ async function until(pred, ms = 20_000) {
 }
 
 const results = []
-async function test(name, fn) {
+/** Long enough for the slowest invariant (the animation) on a cold Windows runner. */
+const TIMEOUT = 180_000
+async function test(name, fn, { timeout = TIMEOUT } = {}) {
   const started = Date.now()
   const n = String(results.length + 1)
   process.stdout.write(`[T${n}] ${name} … `)
   try {
-    await fn()
+    // A test that hangs must fail by name. Without this the suite dies on an
+    // unsettled await, and the log ends mid-line with exit code 13.
+    let timer
+    const guard = new Promise((_, rej) => {
+      timer = setTimeout(() => rej(new Error(`timed out after ${timeout / 1000}s`)), timeout)
+    })
+    try { await Promise.race([fn(), guard]) } finally { clearTimeout(timer) }
     const secs = ((Date.now() - started) / 1000).toFixed(1)
     console.log(`PASS (${secs}s)`)
     results.push({ name, ok: true })
@@ -206,14 +224,19 @@ await test('SIGTERM at any point in startup leaves no orphan', async () => {
   // Chrome only swallows SIGTERM inside a window during startup, so a single
   // well-timed kill is a coin flip. Sampling fixed points across the window
   // keeps the test deterministic while actually covering the band.
+  let interrupted = 0
   for (const delay of [300, 900, 1500, 2100]) {
     const child = renderBg('fig.html', `term-${delay}.png`, '--theme', 'slate', '--scale', '1')
     await sleep(delay)
+    // On a fast machine the later samples land after the render already finished.
+    // Killing a dead child proves nothing, so count the ones that hit a live one.
+    if (child.exitCode === null && child.signalCode === null) interrupted += 1
     child.kill('SIGTERM')
-    await new Promise((res) => child.on('close', res))
+    await child.closed
     const gone = await until(() => isoChromes().length === 0, 10_000)
     assert(gone, `${isoChromes().length} Chrome process(es) survived SIGTERM sent ${delay}ms in`)
   }
+  assert(interrupted > 0, 'every sample landed after the render had finished — the startup window was never hit')
   const after = render('fig.html', 'after-term.png', '--theme', 'slate', '--scale', '1')
   assert(after.status === 0, `the next render failed: ${after.stderr.trim()}`)
   assert(sha('after-term.png') === baseline, 'the next render produced different output')
@@ -224,7 +247,7 @@ await test('SIGKILL is recovered from by the following run', async () => {
   const appeared = await until(() => isoChromes().length > 0)
   assert(appeared, 'Chrome never started')
   child.kill('SIGKILL')
-  await new Promise((res) => child.on('close', res))
+  await child.closed
   // Nothing ran on the way out, so the litter is real: a stale lock, an orphaned
   // Chrome, and the hidden theme copy sitting in the project directory.
   assert(strays().length > 0 || isoTemp(/\.lock$/).length > 0, 'expected a hard kill to leave something behind')
