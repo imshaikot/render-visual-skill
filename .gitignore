@@ -1,3 +1,8 @@
 .DS_Store
 out/
 .render-*.html
+
+# Local Claude Code config. Leading slash on purpose: an unanchored pattern would
+# also swallow these names anywhere inside skills/render-visual/, which ships.
+/.claude/
+/CLAUDE.md
