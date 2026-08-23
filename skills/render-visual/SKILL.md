@@ -1,6 +1,6 @@
 ---
 name: render-visual
-description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Needs a shell, Node 18+, and a Chromium-based browser. Eight built-in themes (dark, light, editorial, terminal, blueprint, neon, sepia), swappable with a flag. Also frames your own screenshots and photos — in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, banners, device mockups, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, screenshot in a browser frame, device mockup, render a png, make an image, visual."
+description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Needs a shell, Node 18+, and a Chromium-based browser. Eight built-in themes (dark, light, editorial, terminal, blueprint, neon, sepia), swappable with a flag. Also frames your own screenshots and photos — in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, banners, device mockups, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, swimlane, tree view, cluster diagram, deployment diagram, mind map, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, screenshot in a browser frame, device mockup, render a png, make an image, visual."
 license: MIT
 compatibility: "Requires shell command execution, Node 18+, and a local Chromium-based browser (Chrome, Chromium, Brave, or Edge); set CHROME_PATH if it is installed somewhere unusual. Theme fonts load from fonts.googleapis.com, so renders without network access fall back to system fonts. Cannot run where there is no shell or no browser: claude.ai chat, the Skills API, Cowork and cloud sessions, and most CI images."
 metadata:
@@ -19,10 +19,15 @@ file instead of hand-picked colors.
 | `$SKILL/templates/slide.html` | 1920×1080 | Presentation slides: kicker, headline with a gradient phrase, up to three points, footer |
 | `$SKILL/templates/card.html` | 1200×630 | Social/og cards: mark, headline, one-paragraph pitch, chips, bottom rule |
 | `$SKILL/templates/sequence.html` | 1360×740 | Sequence diagrams: lifelines, calls and returns, activations — static, or animated step by step |
+| `$SKILL/templates/swimlane.html` | 1360×740 | Cross-functional flows: lanes that own the steps, labelled handoffs, an exception path that never leaves its lane |
+| `$SKILL/templates/tree.html` | 1360×740 | Hierarchies, both idioms: an indented tree view (files, nav, an outline) beside the same tree drawn node-link |
+| `$SKILL/templates/cluster.html` | 1360×740 | What runs inside a boundary: control plane, worker nodes, pods, and the state that outlives a rebuild |
+| `$SKILL/templates/deployment.html` | 1360×740 | Which artifact lands on which machine, over which protocol: `el-cube` nodes, «stereotypes», artifact chips — see §5 |
+| `$SKILL/templates/mindmap.html` | 1360×740 | A question in the middle and the answers around it: six branches, two leaves each, one branch emphasised |
 | `$SKILL/templates/code.html` | 1360×740 | Code snippets in a themed window (Carbon-style): hand-highlighted tokens, line numbers, a highlight line, diff rows — see §7 |
 | `$SKILL/templates/charts.html` | parts sheet | Browsable catalogue of the chart and BI parts — pie, donut, bar, line, area, stacked, scatter, funnel, gauge, heatmap, sparkline, KPI tile, table, dashboard. Schematic figures, not plotted data — see §5 |
 | `$SKILL/templates/palette.html` | 1360×980 | Theme specimen: the tokens, both fonts, the gradient, the alpha ladders, the parts dressed by that theme. A catalogue, never a deliverable — see §4 |
-| `$SKILL/templates/elements.html` | parts sheet | Browsable catalogue of the frames, infrastructure shapes and icon glyphs in `$SKILL/parts/`. Reference them, don't copy them. Never a deliverable — see §5 |
+| `$SKILL/templates/elements.html` | parts sheet | Browsable catalogue of the frames, infrastructure shapes, deployment node and icon glyphs in `$SKILL/parts/`. Reference them, don't copy them. Never a deliverable — see §5 |
 
 | Theme | Mood | Fonts |
 |---|---|---|
@@ -248,7 +253,7 @@ anything technical. Kickers are small mono, letter-spaced, uppercase, `--ink-fai
 
 ## 5. The element library
 
-`$SKILL/parts/` holds 55 ready-made pieces, one `.svg` per part, each a single `<g>` anchored
+`$SKILL/parts/` holds 57 ready-made pieces, one `.svg` per part, each a single `<g>` anchored
 at its own top-left and built purely from theme tokens. **Reference one instead of copying
 it** — a `data-part` attribute is replaced with the part's markup at render time:
 
@@ -260,14 +265,15 @@ it** — a `data-part` attribute is replaced with the part's markup at render ti
 | | |
 |---|---|
 | Frames | `el-window` `el-browser` `el-terminal` `el-phone` |
+| Nodes | `el-cube` — the 3-D deployment box; front face 240×150 at (+0,+20) |
 | Shapes | `el-database` `el-server` `el-queue` `el-cloud` `el-router` `el-actor` `el-shield` |
 | Charts | `el-chart-pie` `el-chart-donut` `el-chart-bar` `el-chart-hbar` `el-chart-line` `el-chart-area` `el-chart-stacked` `el-chart-scatter` `el-chart-funnel` `el-chart-gauge` `el-chart-heatmap` `el-sparkline` |
 | BI | `el-dashboard` `el-stat-tile` `el-table` |
-| Glyphs (28×28) | `g-user` `g-users` `g-db` `g-cloud` `g-gear` `g-lock` `g-key` `g-globe` `g-bolt` `g-mail` `g-clock` `g-term` `g-file` `g-mobile` `g-screen` `g-api` `g-chip` `g-layers` `g-net` `g-search` `g-check` `g-warn` `g-chart-pie` `g-chart-bar` `g-chart-line` `g-gauge` `g-dashboard` `g-filter` `g-table` |
+| Glyphs (28×28) | `g-user` `g-users` `g-db` `g-cloud` `g-gear` `g-lock` `g-key` `g-globe` `g-bolt` `g-mail` `g-clock` `g-folder` `g-term` `g-file` `g-mobile` `g-screen` `g-api` `g-chip` `g-layers` `g-net` `g-search` `g-check` `g-warn` `g-chart-pie` `g-chart-bar` `g-chart-line` `g-gauge` `g-dashboard` `g-filter` `g-table` |
 
 `cat "$SKILL/parts/el-server.svg"` shows one part's footprint and which coordinates move
 together when you stretch it. To see them drawn, render `templates/elements.html` (frames,
-shapes, glyphs) or `templates/charts.html` (charts and BI) — catalogues, never deliverables,
+shapes, the deployment cube, glyphs) or `templates/charts.html` (charts and BI) — catalogues, never deliverables,
 and both built from the same includes.
 
 - **`data-accent="1..4"`** recolors the part's accent pieces to `--a1`…`--a4` (§4). Anything
@@ -289,6 +295,9 @@ and both built from the same includes.
   `elements.html` already carry the block. A page missing them is fatal before Chrome
   launches, because parts carry no color of their own and undefined utilities render as
   invisible or unstroked shapes on an otherwise perfect PNG.
+- **Includes are not recursive.** A `data-part` inside another part's call site is skipped
+  and then fatal — the substitution runs one pass. Place the part, then draw its contents in a
+  *sibling* `<g>` on the same origin; `templates/deployment.html` fills `el-cube` that way.
 - An unknown part id is fatal too, and lists what exists.
 
 Frames are nodes in their own right: caption them with a `.title`/`.sub` pair beneath, or

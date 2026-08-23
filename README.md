@@ -36,8 +36,13 @@ Gemini CLI, OpenCode, Amp, Goose and others.
 | **Social / og cards** | Mark, headline, one-paragraph pitch, chips. 1200×630 |
 | **Code snippets** | Carbon-style window, hand-highlighted against a fixed token→accent mapping, line numbers, a highlight line, diff rows |
 | **Sequence diagrams** | Lifelines, calls, returns, activations — rendered static, or animated step by step |
+| **Swimlanes** | Lanes that own the steps, labelled handoffs, an exception path that stays in its lane |
+| **Trees** | One hierarchy two ways — an indented tree view beside the same tree drawn node-link |
+| **Clusters** | A dashed boundary, control plane, worker nodes and pods; what is outside it survives a rebuild |
+| **Deployment diagrams** | 3-D nodes, «stereotypes» and artifact chips: which file lands on which machine, over which protocol |
+| **Mind maps** | A question in the middle, branches around it, leaves as evidence |
 | **Animated GIFs** | Steps tweened over several frames (`slide`, `fade`, `pop`), assembled in pure Node. No ffmpeg |
-| **Element library** | 55 referenceable parts — device frames, infrastructure shapes, charts, BI furniture and 29 glyphs |
+| **Element library** | 57 referenceable parts — device frames, infrastructure shapes, a 3-D deployment node, charts, BI furniture and 30 glyphs |
 | **Chart & BI schematics** | Pie, donut, bar, hbar, line, area, stacked, scatter, funnel, gauge, heatmap, sparkline, dashboard, KPI tile, table |
 | **Your own images** | Screenshots and photos placed into a device frame or cropped to a shape, inlined before the render |
 | **Eight themes** | Swap with one flag — every template consumes design tokens, never hard-coded colour |
@@ -52,6 +57,15 @@ Gemini CLI, OpenCode, Amp, Goose and others.
 | --- | --- | --- |
 | ![diagram, ember theme](previews/diagram-ember.png) | ![slide, slate theme](previews/slide-slate.png) | ![card, paper theme](previews/card-paper.png) |
 | diagram · `ember` | slide · `slate` | card · `paper` |
+
+Five more diagram idioms ship as templates, each 1360×740 and assembled from the same parts:
+
+| | | |
+| --- | --- | --- |
+| ![swimlane, ember theme](previews/swimlane-ember.png) | ![cluster diagram, slate theme](previews/cluster-slate.png) | ![deployment diagram, blueprint theme](previews/deployment-blueprint.png) |
+| swimlane · `ember` | cluster · `slate` | deployment · `blueprint` |
+| ![tree view, paper theme](previews/tree-paper.png) | ![mind map, neon theme](previews/mindmap-neon.png) | |
+| tree · `paper` | mind map · `neon` | |
 
 Same markup, different theme:
 
@@ -201,8 +215,8 @@ that consumes only tokens.
 
 ## Element library
 
-Figures assemble from **55 parts** — window/browser/terminal/phone frames, database, server,
-queue, cloud, router, actor, shield, a 29-glyph icon set, and the chart vocabulary below. A
+Figures assemble from **57 parts** — window/browser/terminal/phone frames, database, server,
+queue, cloud, router, actor, shield, a 3-D deployment cube, a 30-glyph icon set, and the chart vocabulary below. A
 figure *references* a part rather than carrying a copy of its geometry:
 
 ```html
@@ -295,10 +309,11 @@ Reach for `doctor.mjs` when a render fails with *"is another instance using prof
 ```
 skills/render-visual/       the skill — this directory is what gets installed
   SKILL.md                  workflow, aesthetic rules, layout discipline
-  templates/                diagram 1360×740 · slide 1920×1080 · card 1200×630
-                            sequence (animatable) · code 1360×740
+  templates/                diagram · swimlane · tree · cluster · deployment ·
+                            mindmap · sequence (animatable) · code — all 1360×740
+                            slide 1920×1080 · card 1200×630
                             elements + charts (parts sheets) · palette (theme specimen)
-  parts/                    55 includable elements — frames, shapes, charts,
+  parts/                    57 includable elements — frames, shapes, charts,
                             BI furniture, glyphs
   themes/                   ember · slate · paper · terminal · blueprint · frost
                             neon · sepia  (design tokens, swappable)
