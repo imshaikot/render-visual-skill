@@ -1,0 +1,7 @@
+<!-- el-chart-pie · pie chart · 120×120 · anchor top-left · schematic, segments 40/25/20/15 · series are a1-a4, so data-accent is refused -->
+<g>
+  <path class="f1 sline" stroke-width="1.5" d="M60 60 L60 4 A56 56 0 0 1 92.92 105.3 Z"/>
+  <path class="f2 sline" stroke-width="1.5" d="M60 60 L92.92 105.3 A56 56 0 0 1 14.7 92.92 Z"/>
+  <path class="f3 sline" stroke-width="1.5" d="M60 60 L14.7 92.92 A56 56 0 0 1 14.7 27.08 Z"/>
+  <path class="f4 sline" stroke-width="1.5" d="M60 60 L14.7 27.08 A56 56 0 0 1 60 4 Z"/>
+</g>

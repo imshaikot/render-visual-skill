@@ -1,0 +1,13 @@
+<!-- el-chart-line · line chart · 180×120 · anchor top-left · schematic, one series in a1 · data-accent recolours it -->
+<g>
+  <path class="sline" opacity="0.55" stroke-width="1" d="M8 44 H178"/>
+  <path class="sline" opacity="0.55" stroke-width="1" d="M8 74 H178"/>
+  <path class="sline" stroke-width="1" d="M8 6 V104 H178"/>
+  <path class="s1" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 84 L50 58 L80 68 L110 36 L141 46 L172 20"/>
+  <circle class="f1" cx="20" cy="84" r="3"/>
+  <circle class="f1" cx="50" cy="58" r="3"/>
+  <circle class="f1" cx="80" cy="68" r="3"/>
+  <circle class="f1" cx="110" cy="36" r="3"/>
+  <circle class="f1" cx="141" cy="46" r="3"/>
+  <circle class="f1" cx="172" cy="20" r="3"/>
+</g>

@@ -1,0 +1,24 @@
+<!-- el-table · data table · 200×120 · anchor top-left · header plus three rows of skeleton cells; swap a bar for real mono <text> where the value matters -->
+<g>
+  <rect class="node" width="200" height="120" rx="10" stroke-width="1"/>
+  <path class="fline" d="M1 30 V11 A10 10 0 0 1 11 1 H189 A10 10 0 0 1 199 11 V30 Z"/>
+  <path class="sline" stroke-width="1" d="M1 30 H199"/>
+  <rect class="ffaint" opacity="0.6" x="14" y="15" width="52" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.6" x="84" y="15" width="46" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.6" x="146" y="15" width="28" height="6" rx="3"/>
+  <path class="sline" opacity="0.6" stroke-width="1" d="M1 52 H199"/>
+  <rect class="ffaint" opacity="0.26" x="14" y="37" width="52" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="84" y="37" width="46" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="146" y="37" width="28" height="6" rx="3"/>
+  <path class="sline" opacity="0.6" stroke-width="1" d="M1 74 H199"/>
+  <rect class="ffaint" opacity="0.26" x="14" y="59" width="52" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="84" y="59" width="46" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="146" y="59" width="28" height="6" rx="3"/>
+  <path class="sline" opacity="0.6" stroke-width="1" d="M1 96 H199"/>
+  <rect class="ffaint" opacity="0.26" x="14" y="81" width="52" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="84" y="81" width="46" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="146" y="81" width="28" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="14" y="103" width="44" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="84" y="103" width="38" height="6" rx="3"/>
+  <rect class="ffaint" opacity="0.26" x="146" y="103" width="32" height="6" rx="3"/>
+</g>

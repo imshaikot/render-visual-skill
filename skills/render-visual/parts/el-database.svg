@@ -1,0 +1,7 @@
+<!-- el-database · cylinder · 120×140 · anchor top-left (rim center at y=24). -->
+<g>
+  <path class="node" stroke-width="1" d="M2 24 A58 20 0 0 1 118 24 V116 A58 20 0 0 1 2 116 Z"/>
+  <path class="s1" stroke-width="1.6" d="M2 24 A58 20 0 0 0 118 24"/>
+  <path class="sfaint" opacity="0.3" stroke-width="1.2" d="M2 58 A58 20 0 0 0 118 58"/>
+  <path class="sfaint" opacity="0.3" stroke-width="1.2" d="M2 86 A58 20 0 0 0 118 86"/>
+</g>

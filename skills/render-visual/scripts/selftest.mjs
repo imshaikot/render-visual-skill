@@ -426,6 +426,101 @@ await test('an impossible render fails fast instead of relaunching Chrome', asyn
   assert(isoChromes().length === 0, 'Chrome was launched for a render that could never succeed')
 })
 
+/* ── element includes ────────────────────────────────────────────────────── */
+
+// A figure that references a part and one that carries its geometry must be the
+// same image. Everything else about includes is a convenience; this is the
+// guarantee, and it is what lets templates/elements.html be rendered through the
+// mechanism instead of holding a second copy of all 33 parts.
+const partsDir = join(SKILL_DIR, 'parts')
+const figWith = (svg, name) => {
+  const html = readFileSync(join(work, 'fig.html'), 'utf8')
+  const at = html.indexOf('<svg')
+  const tagEnd = html.indexOf('>', at) + 1
+  writeFileSync(join(work, name), html.slice(0, tagEnd) + svg + html.slice(tagEnd))
+  return name
+}
+/** The part's markup positioned by hand — the control, built without inlineParts. */
+const byHand = (id, transform, accent = null) => {
+  let svg = readFileSync(join(partsDir, `${id}.svg`), 'utf8').replace(/<!--[\s\S]*?-->\s*/g, '').trim()
+  if (accent) {
+    svg = svg.replace(/class="([^"]*)"/g, (_, c) =>
+      `class="${c.split(/\s+/).map((k) => (k === 's1' ? `s${accent}` : k === 'f1' ? `f${accent}` : k)).join(' ')}"`)
+  }
+  return svg.replace(/^<g\b/, `<g transform="${transform}"`)
+}
+
+await test('an included part renders identically to the same geometry inlined', async () => {
+  for (const [id, accent] of [['el-database', null], ['el-server', null], ['g-key', '3'], ['el-shield', '2']]) {
+    const tf = 'translate(300,300)'
+    const a = accent ? ` data-accent="${accent}"` : ''
+    figWith(`<g data-part="${id}"${a} transform="${tf}"/>`, 'inc.png.html')
+    figWith(byHand(id, tf, accent), 'hand.png.html')
+    for (const [src, out] of [['inc.png.html', 'inc.png'], ['hand.png.html', 'hand.png']]) {
+      const r = render(src, out, '--theme', 'slate', '--scale', '1')
+      assert(r.status === 0, `${id}: ${out} exit ${r.status}: ${r.stderr.trim()}`)
+    }
+    assert(sha('inc.png') === sha('hand.png'), `${id}${a} rendered differently than the same markup inlined`)
+  }
+})
+
+await test('every shipped part inlines and paints', async () => {
+  // A part file that lost its root <g>, or whose body references a class no
+  // template defines, is invisible in a figure and perfectly plausible in a PNG.
+  const ids = readdirSync(partsDir).filter((f) => f.endsWith('.svg')).map((f) => f.slice(0, -4)).sort()
+  assert(ids.length >= 30, `expected the shipped parts, found ${ids.length}`)
+  // The canvas is sized from the part count, not fixed. A grid that outgrew a
+  // hard-coded height would put the overflow outside the body box, where it is
+  // cropped in silence and the render still passes on the ink the rest put down.
+  const cols = 6, cellW = 350, cellH = 270, pad = 40
+  const W = pad + cols * cellW
+  const H = pad + Math.ceil(ids.length / cols) * cellH + pad
+  const placed = ids.map((id, i) => `<g data-part="${id}" transform="translate(${pad + (i % cols) * cellW},${pad + Math.floor(i / cols) * cellH})"/>`)
+  const css = readFileSync(join(SKILL_DIR, 'templates', 'diagram.html'), 'utf8').match(/<style>[\s\S]*?<\/style>/)[0]
+  writeFileSync(join(work, 'allparts.html'),
+    '<html><head><link rel="stylesheet" href="themes/ember.css">' +
+    css.replace(/width: 1360px; height: 740px/, `width: ${W}px; height: ${H}px`) + '</head><body>' +
+    `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">${placed.join('')}</svg></body></html>`)
+  const r = render('allparts.html', 'allparts.png', '--scale', '1')
+  assert(r.status === 0, `exit ${r.status}: ${r.stderr.trim()}`)
+  assertPng(join(work, 'allparts.png'), { w: W, h: H })
+})
+
+await test('a part that cannot render right is refused before Chrome starts', async () => {
+  const cases = [
+    ['unknown id', '<g data-part="el-datbase" transform="translate(300,300)"/>', /Unknown part/],
+    ['accent out of range', '<g data-part="el-database" data-accent="9" transform="translate(300,300)"/>', /must be 1, 2, 3 or 4/],
+    ['two accent classes', '<g data-part="g-key" class="s3" transform="translate(300,300)"/>', /two accent classes/],
+    ['unclosed call site', '<g data-part="el-database" transform="translate(300,300)">', /never closed/],
+    ['accent already used by the part', '<g data-part="el-server" data-accent="4" transform="translate(300,300)"/>', /already uses accent 4/],
+    ['accent onto a chart series', '<g data-part="el-chart-pie" data-accent="3" transform="translate(300,300)"/>', /already uses accent 3/],
+  ]
+  for (const [label, svg, pattern] of cases) {
+    figWith(svg, 'guard.html')
+    const started = Date.now()
+    const r = render('guard.html', 'guard.png', '--theme', 'slate', '--scale', '1')
+    assert(r.status !== 0, `${label} was accepted`)
+    assert(pattern.test(r.stderr), `${label}: unexpected message: ${r.stderr.trim()}`)
+    assert(Date.now() - started < 3000, `${label}: the check ran too late to have preceded Chrome`)
+    assert(!existsSync(join(work, 'guard.png')), `${label} wrote a PNG anyway`)
+  }
+  // The one a screenshot cannot catch: the part resolves, the page renders, and
+  // the shapes come out unstroked on an otherwise correct figure.
+  writeFileSync(join(work, 'nocss.html'),
+    '<html><head><link rel="stylesheet" href="themes/ember.css"><style>body{width:400px;height:300px;background:var(--ground)}</style></head>' +
+    '<body><svg width="400" height="300" viewBox="0 0 400 300"><g data-part="el-database" transform="translate(60,60)"/></svg></body></html>')
+  const r = render('nocss.html', 'nocss.png', '--scale', '1')
+  assert(r.status !== 0, 'a part with no CSS to colour it was rendered anyway')
+  // Named classes, not the shape of the message: the suggestion is derived from
+  // the reference template, so matching boilerplate would pass on an empty list.
+  for (const c of ['.node', '.s1', '.sfaint']) {
+    assert(r.stderr.includes(c), `${c} is used by el-database but was not reported missing: ${r.stderr.trim()}`)
+  }
+  assert(/stroke: var\(--a1\)/.test(r.stderr), 'the message did not carry the real declaration to paste')
+  assert(!existsSync(join(work, 'nocss.png')), 'a PNG was written anyway')
+  assert(isoChromes().length === 0, 'Chrome was launched for a render that could never be right')
+})
+
 /* ───────────────────────────────────────────────────────────────────────── */
 
 const failed = results.filter((r) => !r.ok)

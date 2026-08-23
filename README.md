@@ -24,11 +24,25 @@ changed-region deltas does the rest; no ffmpeg, still zero dependencies):
 
 ![animated sequence diagram](previews/sequence-ember.gif)
 
-Figures assemble from a copy-paste **element library** — window/browser/terminal/phone
-frames, database, server, queue, cloud, router, actor, shield, and a 22-glyph icon set —
-every part built from theme tokens, so it restyles with the theme like everything else:
+Figures assemble from an **element library** of 55 parts — window/browser/terminal/phone
+frames, database, server, queue, cloud, router, actor, shield, and a 29-glyph icon set.
+A figure references one rather than carrying a copy of its geometry:
+
+```html
+<g data-part="el-database" data-accent="2" transform="translate(70,452)"/>
+```
+
+Every part is built from theme tokens, so it restyles with the theme like everything else:
 
 ![element library, slate theme](previews/elements-slate.png)
+
+That library includes the standard chart vocabulary — pie, donut, bar, line, area, stacked,
+scatter, funnel, gauge, heatmap, sparkline — plus BI furniture: a dashboard window, KPI tiles
+and a data table. These are **schematics of charts, not charts**: every proportion in them is
+fixed and arbitrary, so they can say *"a dashboard goes here"* in a figure without pretending
+to be data. Plot real numbers with a real charting library.
+
+![chart and BI parts, paper theme](previews/charts-paper.png)
 
 Code snippets get a Carbon-style window — hand-highlighted with a fixed token→accent
 mapping, line numbers, a highlight line, diff rows — in any of the four themes:
@@ -126,7 +140,7 @@ that up:
 
 ```sh
 node $S/scripts/doctor.mjs --prune   # reap orphans, clear stale locks, reclaim profile disk
-node $S/scripts/selftest.mjs         # ~90s: assert all 16 concurrency and output invariants
+node $S/scripts/selftest.mjs         # ~2m: assert all 19 concurrency and output invariants
 ```
 
 ## What's inside
@@ -135,11 +149,14 @@ node $S/scripts/selftest.mjs         # ~90s: assert all 16 concurrency and outpu
 skills/render-visual/       the skill — this directory is what gets installed
   SKILL.md                  workflow, aesthetic rules, layout discipline
   templates/                diagram 1360×740 · slide 1920×1080 · card 1200×630
-                            sequence (animatable) · code 1360×740 · elements (parts sheet)
+                            sequence (animatable) · code 1360×740
+                            elements + charts (parts sheets)
+  parts/                    55 includable elements — frames, shapes, charts,
+                            BI furniture, glyphs
   themes/                   ember · slate · paper · terminal  (design tokens, swappable)
   scripts/                  render.mjs (PNG) · animate.mjs (GIF) · gif.mjs (GIF89a encoder)
                             chrome.mjs (profiles, reaping, guards) · cli.mjs · doctor.mjs
-                            selftest.mjs
+                            parts.mjs (element includes) · selftest.mjs
 .claude-plugin/             Claude Code plugin + marketplace manifests
 previews/                   the images above
 ```

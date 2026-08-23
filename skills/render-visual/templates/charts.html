@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal. If you copied this file out of
+         the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 860px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 20px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part below relies only on these + the classes above */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         CHART & BI PARTS SHEET — not a deliverable. Reference a part with
+         <g data-part="el-chart-bar" transform="translate(x,y)"/>; this sheet is
+         built the same way, which is why it can never drift from parts/.
+         ══════════════════════════════════════════════════════════════════════ -->
+    <svg width="1360" height="860" viewBox="0 0 1360 860" fill="none">
+
+      <text class="kicker" x="70" y="58">RENDERCRAFT · CHART &amp; BI PARTS — SCHEMATIC FIGURES, NOT PLOTTED DATA</text>
+
+      <text class="sec" x="70" y="108">CHARTS — the standard vocabulary. Single-series parts recolour with data-accent; multi-series ones carry a1-a4 as the series</text>
+      <g data-part="el-chart-pie" transform="translate(70, 130)"/>
+      <text class="sub" x="130" y="288" text-anchor="middle">el-chart-pie</text>
+      <g data-part="el-chart-donut" transform="translate(242, 130)"/>
+      <text class="sub" x="302" y="288" text-anchor="middle">el-chart-donut</text>
+      <g data-part="el-chart-bar" transform="translate(414, 130)"/>
+      <text class="sub" x="504" y="288" text-anchor="middle">el-chart-bar</text>
+      <g data-part="el-chart-hbar" transform="translate(646, 130)"/>
+      <text class="sub" x="736" y="288" text-anchor="middle">el-chart-hbar</text>
+      <g data-part="el-chart-line" transform="translate(878, 130)"/>
+      <text class="sub" x="968" y="288" text-anchor="middle">el-chart-line</text>
+      <g data-part="el-chart-area" transform="translate(1110, 130)"/>
+      <text class="sub" x="1200" y="288" text-anchor="middle">el-chart-area</text>
+
+      <g data-part="el-chart-stacked" transform="translate(70, 320)"/>
+      <text class="sub" x="160" y="478" text-anchor="middle">el-chart-stacked</text>
+      <g data-part="el-chart-scatter" transform="translate(314, 320)"/>
+      <text class="sub" x="404" y="478" text-anchor="middle">el-chart-scatter</text>
+      <g data-part="el-chart-funnel" transform="translate(558, 322)"/>
+      <text class="sub" x="628" y="478" text-anchor="middle">el-chart-funnel</text>
+      <g data-part="el-chart-gauge" transform="translate(762, 340)"/>
+      <text class="sub" x="827" y="478" text-anchor="middle">el-chart-gauge</text>
+      <g data-part="el-chart-heatmap" transform="translate(956, 322)"/>
+      <text class="sub" x="1040" y="478" text-anchor="middle">el-chart-heatmap</text>
+      <g data-part="el-sparkline" transform="translate(1188, 364)"/>
+      <text class="sub" x="1238" y="478" text-anchor="middle">el-sparkline</text>
+
+      <text class="sec" x="70" y="536">BI — dashboards, KPI tiles, tables</text>
+      <g data-part="el-stat-tile" transform="translate(70, 558)"/>
+      <text class="sub" x="170" y="680" text-anchor="middle">el-stat-tile</text>
+      <g data-part="el-table" transform="translate(330, 558)"/>
+      <text class="sub" x="430" y="704" text-anchor="middle">el-table</text>
+      <g data-part="el-dashboard" transform="translate(590, 558)"/>
+      <text class="sub" x="750" y="804" text-anchor="middle">el-dashboard</text>
+
+      <text class="sec" x="990" y="536">GLYPHS — 28×28, as in elements.html</text>
+      <rect class="node" x="980" y="556" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-chart-pie" transform="translate(990, 566)"/>
+      <text class="sub" x="1004" y="620" text-anchor="middle" font-size="11">chart-pie</text>
+      <rect class="node" x="1072" y="556" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-chart-bar" transform="translate(1082, 566)"/>
+      <text class="sub" x="1096" y="620" text-anchor="middle" font-size="11">chart-bar</text>
+      <rect class="node" x="1164" y="556" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-chart-line" transform="translate(1174, 566)"/>
+      <text class="sub" x="1188" y="620" text-anchor="middle" font-size="11">chart-line</text>
+      <rect class="node" x="1256" y="556" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-gauge" transform="translate(1266, 566)"/>
+      <text class="sub" x="1280" y="620" text-anchor="middle" font-size="11">gauge</text>
+      <rect class="node" x="980" y="652" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-dashboard" transform="translate(990, 662)"/>
+      <text class="sub" x="1004" y="716" text-anchor="middle" font-size="11">dashboard</text>
+      <rect class="node" x="1072" y="652" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-filter" transform="translate(1082, 662)"/>
+      <text class="sub" x="1096" y="716" text-anchor="middle" font-size="11">filter</text>
+      <rect class="node" x="1164" y="652" width="48" height="48" rx="12" stroke-width="1"/>
+      <g data-part="g-table" transform="translate(1174, 662)"/>
+      <text class="sub" x="1188" y="716" text-anchor="middle" font-size="11">table</text>
+
+      <text class="sub" x="70" y="836" opacity="0.75">Schematics of charts — every proportion here is fixed and arbitrary. To show real numbers, edit the geometry, or plot the data with a charting library.</text>
+    </svg>
+  </body>
+</html>

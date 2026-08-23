@@ -1,0 +1,7 @@
+<!-- g-gear · 28×28 glyph · anchor top-left · configuration, a worker, background processing -->
+<g class="s1 glyph">
+  <circle cx="14" cy="14" r="6.8"/>
+  <circle cx="14" cy="14" r="2.4"/>
+  <path d="M14 7.2 V3.8 M14 20.8 V24.2 M7.2 14 H3.8 M20.8 14 H24.2"/>
+  <path d="M9.2 9.2 L6.8 6.8 M18.8 9.2 L21.2 6.8 M9.2 18.8 L6.8 21.2 M18.8 18.8 L21.2 21.2"/>
+</g>

@@ -1,0 +1,6 @@
+<!-- g-globe · 28×28 glyph · anchor top-left · the public internet, a CDN, a region -->
+<g class="s1 glyph">
+  <circle cx="14" cy="14" r="10"/>
+  <path d="M4 14 h20"/>
+  <ellipse cx="14" cy="14" rx="4.5" ry="10"/>
+</g>

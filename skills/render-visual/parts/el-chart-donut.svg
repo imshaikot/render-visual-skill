@@ -1,0 +1,9 @@
+<!-- el-chart-donut · donut chart · 120×120 · anchor top-left · schematic, segments 40/25/20/15 · centre is free for a <text> total · series are a1-a4, so data-accent is refused -->
+<g>
+  <g transform="rotate(-90 60 60)" fill="none" stroke-width="22">
+    <circle class="s1" cx="60" cy="60" r="44" stroke-dasharray="110.58 165.88" stroke-dashoffset="0"/>
+    <circle class="s2" cx="60" cy="60" r="44" stroke-dasharray="69.12 207.35" stroke-dashoffset="-110.58"/>
+    <circle class="s3" cx="60" cy="60" r="44" stroke-dasharray="55.29 221.17" stroke-dashoffset="-179.7"/>
+    <circle class="s4" cx="60" cy="60" r="44" stroke-dasharray="41.47 234.99" stroke-dashoffset="-234.99"/>
+  </g>
+</g>

@@ -12,6 +12,9 @@
 // --transparent renders with an alpha background: the body's ground and the
 //         glow/dots furniture are stripped, so the PNG drops onto any surface.
 //
+// <g data-part="el-database"/> anywhere in the page is replaced with that
+// part's markup from parts/ before the render. Unknown ids are fatal.
+//
 // Chrome is found automatically on macOS, Linux and Windows; CHROME_PATH overrides.
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -19,6 +22,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { assertPng, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
+import { assertPartClasses, inlineParts } from './parts.mjs'
 
 const USAGE = 'render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--theme name] [--transparent]'
 const cli = parseArgs({ usage: USAGE, bool: ['transparent'], value: ['size', 'scale', 'theme'] })
@@ -64,6 +68,11 @@ if (theme) {
   html = html.replace(tag, `<style>\n${readFileSync(theme.file, 'utf8')}\n</style>`)
 }
 
+// Parts are inlined after the theme so the CSS check below sees the whole
+// stylesheet the page will actually render with.
+const parts = inlineParts(html, { onError: (m) => fail(m) })
+html = parts.html
+
 if (transparent) {
   // Unpaint the ground and drop the ground-level furniture; everything else
   // (surfaces, shadows, text) keeps its own alpha and composites cleanly.
@@ -73,7 +82,7 @@ if (transparent) {
 
 let source = inputFile
 let workDir = null
-if (theme || transparent) {
+if (theme || transparent || parts.used.length) {
   // A <base href> back at the input's directory keeps every other relative
   // reference on the page resolving exactly as it would in place.
   workDir = makeWorkDir()
@@ -87,6 +96,7 @@ try {
   // Checked against the input's directory either way: unthemed pages still link
   // their stylesheet relatively, and the <base href> above preserves that.
   assertStylesheets(html, inputDir)
+  assertPartClasses(html, parts.used, inputDir)
   await shootResilient(chrome, pathToFileURL(source).href, output, w, h, scale, { transparent })
   // Dimensions are only asserted for integer scales: Chrome's own rounding at a
   // fractional device-scale factor is not worth a false failure over.

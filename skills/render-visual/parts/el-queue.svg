@@ -1,0 +1,9 @@
+<!-- el-queue · slats + flow arrow · 168×64 · anchor top-left.
+     Ends with its own flow arrow at x=102-153: connect the NEXT node from x=168
+     without drawing another arrowhead, or the figure shows two in a row. -->
+<g>
+  <rect class="node" width="22" height="64" rx="6" stroke-width="1"/>
+  <rect class="node" x="34" width="22" height="64" rx="6" stroke-width="1"/>
+  <rect class="node" x="68" width="22" height="64" rx="6" stroke-width="1"/>
+  <path class="s1 glyph" stroke-width="1.8" d="M102 32 H152 M146 25.5 L153.5 32 146 38.5"/>
+</g>
