@@ -8,7 +8,7 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        width: 1360px; height: 940px; overflow: hidden;
+        width: 1360px; height: 1180px; overflow: hidden;
         background: var(--ground);
         position: relative;
         font-family: var(--font-display);
@@ -50,7 +50,7 @@
          anchored at its own top-left and depends only on the classes in <style>
          (diagram.html and sequence.html already carry the same set).
          ══════════════════════════════════════════════════════════════════════ -->
-    <svg width="1360" height="940" viewBox="0 0 1360 940" fill="none">
+    <svg width="1360" height="1180" viewBox="0 0 1360 1180" fill="none">
 
       <text class="kicker" x="70" y="58">RENDERCRAFT · ELEMENT LIBRARY — FRAMES, SHAPES, GLYPHS</text>
 
@@ -107,90 +107,106 @@
       <text class="sub" x="1074" y="622" text-anchor="middle">el-actor · 68×68</text>
       <text class="sub" x="1246" y="622" text-anchor="middle">el-shield · 92×104</text>
 
-      <text class="sec" x="70" y="668">GLYPHS — 28×28 · class "s1 glyph" · drop into a node card at translate(20,30) in place of the stock icon</text>
+      <text class="sec" x="70" y="668">NODES — 3-D boxes for deployment figures; their contents ride alongside, not inside</text>
+
+      <!-- ▸ el-cube · deployment node · 260×170 · anchor top-left.
+           The accent is the top fold edge, so data-accent recolours the box
+           without touching its silhouette. -->
+      <g data-part="el-cube" transform="translate(70, 684)"/>
+
+      <text class="sub" x="370" y="716">Front face: 240×150 at (+0,+20) — stereotype, name and</text>
+      <text class="sub" x="370" y="742">artifact chips go there, as a SIBLING group on the same</text>
+      <text class="sub" x="370" y="768">origin. Includes are not recursive: a data-part nested</text>
+      <text class="sub" x="370" y="794">inside a call site is left unresolved, and that is fatal.</text>
+      <text class="sub" x="370" y="820">See templates/deployment.html for the pattern.</text>
+
+      <text class="sub" x="200" y="872" text-anchor="middle">el-cube · 260×170</text>
+
+      <text class="sec" x="70" y="918">GLYPHS — 28×28 · class "s1 glyph" · drop into a node card at translate(20,30) in place of the stock icon</text>
 
       <!-- Each glyph is a self-contained <g id="g-…"> in a 28×28 box, stroke 1.6.
            The 48×48 tiles behind them are catalog furniture — don't copy those. -->
 
-      <!-- row A tiles -->
       <g>
-        <rect class="node" x="101" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="211" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="321" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="431" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="541" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="651" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="761" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="871" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="981" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="1091" y="688" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="1201" y="688" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="101" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="201" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="301" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="401" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="501" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="601" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="701" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="801" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="901" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1001" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1101" y="934" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1201" y="934" width="48" height="48" rx="12" stroke-width="1"/>
       </g>
 
-      <g data-part="g-user" transform="translate(111, 698)"/>
-      <g data-part="g-users" transform="translate(221, 698)"/>
-      <g data-part="g-db" transform="translate(331, 698)"/>
-      <g data-part="g-cloud" transform="translate(441, 698)"/>
-      <g data-part="g-gear" transform="translate(551, 698)"/>
-      <g data-part="g-lock" transform="translate(661, 698)"/>
-      <g data-part="g-key" transform="translate(771, 698)"/>
-      <g data-part="g-globe" transform="translate(881, 698)"/>
-      <g data-part="g-bolt" transform="translate(991, 698)"/>
-      <g data-part="g-mail" transform="translate(1101, 698)"/>
-      <g data-part="g-clock" transform="translate(1211, 698)"/>
+      <g data-part="g-user" transform="translate(111, 944)"/>
+      <g data-part="g-users" transform="translate(211, 944)"/>
+      <g data-part="g-db" transform="translate(311, 944)"/>
+      <g data-part="g-cloud" transform="translate(411, 944)"/>
+      <g data-part="g-gear" transform="translate(511, 944)"/>
+      <g data-part="g-lock" transform="translate(611, 944)"/>
+      <g data-part="g-key" transform="translate(711, 944)"/>
+      <g data-part="g-globe" transform="translate(811, 944)"/>
+      <g data-part="g-bolt" transform="translate(911, 944)"/>
+      <g data-part="g-mail" transform="translate(1011, 944)"/>
+      <g data-part="g-clock" transform="translate(1111, 944)"/>
+      <g data-part="g-folder" transform="translate(1211, 944)"/>
 
-      <text class="sub" x="125" y="762" text-anchor="middle">user</text>
-      <text class="sub" x="235" y="762" text-anchor="middle">users</text>
-      <text class="sub" x="345" y="762" text-anchor="middle">db</text>
-      <text class="sub" x="455" y="762" text-anchor="middle">cloud</text>
-      <text class="sub" x="565" y="762" text-anchor="middle">gear</text>
-      <text class="sub" x="675" y="762" text-anchor="middle">lock</text>
-      <text class="sub" x="785" y="762" text-anchor="middle">key</text>
-      <text class="sub" x="895" y="762" text-anchor="middle">globe</text>
-      <text class="sub" x="1005" y="762" text-anchor="middle">bolt</text>
-      <text class="sub" x="1115" y="762" text-anchor="middle">mail</text>
-      <text class="sub" x="1225" y="762" text-anchor="middle">clock</text>
+      <text class="sub" x="125" y="1008" text-anchor="middle">user</text>
+      <text class="sub" x="225" y="1008" text-anchor="middle">users</text>
+      <text class="sub" x="325" y="1008" text-anchor="middle">db</text>
+      <text class="sub" x="425" y="1008" text-anchor="middle">cloud</text>
+      <text class="sub" x="525" y="1008" text-anchor="middle">gear</text>
+      <text class="sub" x="625" y="1008" text-anchor="middle">lock</text>
+      <text class="sub" x="725" y="1008" text-anchor="middle">key</text>
+      <text class="sub" x="825" y="1008" text-anchor="middle">globe</text>
+      <text class="sub" x="925" y="1008" text-anchor="middle">bolt</text>
+      <text class="sub" x="1025" y="1008" text-anchor="middle">mail</text>
+      <text class="sub" x="1125" y="1008" text-anchor="middle">clock</text>
+      <text class="sub" x="1225" y="1008" text-anchor="middle">folder</text>
 
-      <!-- row B tiles -->
       <g>
-        <rect class="node" x="101" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="211" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="321" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="431" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="541" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="651" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="761" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="871" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="981" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="1091" y="788" width="48" height="48" rx="12" stroke-width="1"/>
-        <rect class="node" x="1201" y="788" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="101" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="201" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="301" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="401" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="501" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="601" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="701" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="801" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="901" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1001" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
+        <rect class="node" x="1101" y="1034" width="48" height="48" rx="12" stroke-width="1"/>
       </g>
 
-      <g data-part="g-term" transform="translate(111, 798)"/>
-      <g data-part="g-file" transform="translate(221, 798)"/>
-      <g data-part="g-mobile" transform="translate(331, 798)"/>
-      <g data-part="g-screen" transform="translate(441, 798)"/>
-      <g data-part="g-api" transform="translate(551, 798)"/>
-      <g data-part="g-chip" transform="translate(661, 798)"/>
-      <g data-part="g-layers" transform="translate(771, 798)"/>
-      <g data-part="g-net" transform="translate(881, 798)"/>
-      <g data-part="g-search" transform="translate(991, 798)"/>
-      <g data-part="g-check" transform="translate(1101, 798)"/>
-      <g data-part="g-warn" transform="translate(1211, 798)"/>
+      <g data-part="g-term" transform="translate(111, 1044)"/>
+      <g data-part="g-file" transform="translate(211, 1044)"/>
+      <g data-part="g-mobile" transform="translate(311, 1044)"/>
+      <g data-part="g-screen" transform="translate(411, 1044)"/>
+      <g data-part="g-api" transform="translate(511, 1044)"/>
+      <g data-part="g-chip" transform="translate(611, 1044)"/>
+      <g data-part="g-layers" transform="translate(711, 1044)"/>
+      <g data-part="g-net" transform="translate(811, 1044)"/>
+      <g data-part="g-search" transform="translate(911, 1044)"/>
+      <g data-part="g-check" transform="translate(1011, 1044)"/>
+      <g data-part="g-warn" transform="translate(1111, 1044)"/>
 
-      <text class="sub" x="125" y="862" text-anchor="middle">term</text>
-      <text class="sub" x="235" y="862" text-anchor="middle">file</text>
-      <text class="sub" x="345" y="862" text-anchor="middle">mobile</text>
-      <text class="sub" x="455" y="862" text-anchor="middle">screen</text>
-      <text class="sub" x="565" y="862" text-anchor="middle">api</text>
-      <text class="sub" x="675" y="862" text-anchor="middle">chip</text>
-      <text class="sub" x="785" y="862" text-anchor="middle">layers</text>
-      <text class="sub" x="895" y="862" text-anchor="middle">net</text>
-      <text class="sub" x="1005" y="862" text-anchor="middle">search</text>
-      <text class="sub" x="1115" y="862" text-anchor="middle">check</text>
-      <text class="sub" x="1225" y="862" text-anchor="middle">warn</text>
+      <text class="sub" x="125" y="1108" text-anchor="middle">term</text>
+      <text class="sub" x="225" y="1108" text-anchor="middle">file</text>
+      <text class="sub" x="325" y="1108" text-anchor="middle">mobile</text>
+      <text class="sub" x="425" y="1108" text-anchor="middle">screen</text>
+      <text class="sub" x="525" y="1108" text-anchor="middle">api</text>
+      <text class="sub" x="625" y="1108" text-anchor="middle">chip</text>
+      <text class="sub" x="725" y="1108" text-anchor="middle">layers</text>
+      <text class="sub" x="825" y="1108" text-anchor="middle">net</text>
+      <text class="sub" x="925" y="1108" text-anchor="middle">search</text>
+      <text class="sub" x="1025" y="1108" text-anchor="middle">check</text>
+      <text class="sub" x="1125" y="1108" text-anchor="middle">warn</text>
 
-      <text class="sub" x="70" y="908" opacity="0.75">Copy a group, position with transform="translate(x,y)", recolor by swapping s1 → s2/s3/s4. Accents stay semantic: one meaning per accent, never decoration.</text>
+      <text class="sub" x="70" y="1148" opacity="0.75">Reference a part by putting a data-part attribute on an empty &lt;g&gt; — never a copy. Recolor with data-accent, 1 to 4: one meaning per accent, never decoration.</text>
     </svg>
   </body>
 </html>

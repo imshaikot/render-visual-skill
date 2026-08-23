@@ -1,0 +1,11 @@
+<!-- el-cube · deployment node / 3-D box · 260×170 · anchor top-left.
+     The front face is 240×150 at (0,20) — stereotype, title and artifact chips
+     go inside it, nested at the call site. The accent is the top fold edge, so
+     data-accent recolours the box without touching its silhouette.
+     Stretch: every x moves with the width and every y with the height; the 20px
+     depth offset is the only constant. -->
+<g>
+  <path class="node" stroke-width="1" stroke-linejoin="round" d="M0 20 L20 0 H260 V150 L240 170 H0 Z"/>
+  <path class="sline" stroke-width="1" d="M240 170 V20 L260 0"/>
+  <path class="s1" stroke-width="1.6" d="M0 20 H240"/>
+</g>
