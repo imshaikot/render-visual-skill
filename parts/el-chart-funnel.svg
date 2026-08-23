@@ -1,7 +1,7 @@
-<!-- el-chart-funnel · funnel · 140×116 · anchor top-left · schematic, four stages in a1-a4 · data-accent is refused -->
+<!-- el-chart-funnel · funnel · 140×116 · anchor top-left · schematic, four stages fading through the drop-off · one accent, graded by opacity · data-accent recolours it -->
 <g>
-  <path class="f1" opacity="0.85" d="M0 0 H140 L128 26 H12 Z"/>
-  <path class="f2" opacity="0.85" d="M14 30 H126 L114 56 H26 Z"/>
-  <path class="f3" opacity="0.85" d="M28 60 H112 L103 86 H37 Z"/>
-  <path class="f4" opacity="0.85" d="M39 90 H101 L95 116 H45 Z"/>
+  <path class="f1" opacity="0.62" d="M0 0 H140 L128 26 H12 Z"/>
+  <path class="f1" opacity="0.46" d="M14 30 H126 L114 56 H26 Z"/>
+  <path class="f1" opacity="0.32" d="M28 60 H112 L103 86 H37 Z"/>
+  <path class="f1" opacity="0.2" d="M39 90 H101 L95 116 H45 Z"/>
 </g>

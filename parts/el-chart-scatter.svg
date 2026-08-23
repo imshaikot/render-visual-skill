@@ -1,20 +1,20 @@
-<!-- el-chart-scatter · scatter plot · 180×120 · anchor top-left · schematic, two series in a1 and a3 · data-accent is refused for 1 and 3 -->
+<!-- el-chart-scatter · scatter plot · 180×120 · anchor top-left · schematic, two series — solid dots and hollow rings, one accent between them · data-accent recolours both -->
 <g>
   <path class="sline" stroke-width="1" d="M8 6 V104 H178"/>
-  <circle class="f1" cx="28" cy="88" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="44" cy="72" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="58" cy="80" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="72" cy="60" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="88" cy="66" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="104" cy="44" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="120" cy="52" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="140" cy="32" r="3.5" opacity="0.9"/>
-  <circle class="f1" cx="162" cy="38" r="3.5" opacity="0.9"/>
-  <circle class="f3" cx="34" cy="56" r="3.5" opacity="0.9"/>
-  <circle class="f3" cx="52" cy="40" r="3.5" opacity="0.9"/>
-  <circle class="f3" cx="66" cy="48" r="3.5" opacity="0.9"/>
-  <circle class="f3" cx="92" cy="26" r="3.5" opacity="0.9"/>
-  <circle class="f3" cx="112" cy="34" r="3.5" opacity="0.9"/>
-  <circle class="f3" cx="134" cy="18" r="3.5" opacity="0.9"/>
-  <circle class="f3" cx="156" cy="24" r="3.5" opacity="0.9"/>
+  <circle class="f1" opacity="0.85" cx="28" cy="88" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="44" cy="72" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="58" cy="80" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="72" cy="60" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="88" cy="66" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="104" cy="44" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="120" cy="52" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="140" cy="32" r="3.5"/>
+  <circle class="f1" opacity="0.85" cx="162" cy="38" r="3.5"/>
+  <circle class="s1" fill="none" stroke-width="1.6" cx="34" cy="56" r="3.5"/>
+  <circle class="s1" fill="none" stroke-width="1.6" cx="52" cy="40" r="3.5"/>
+  <circle class="s1" fill="none" stroke-width="1.6" cx="66" cy="48" r="3.5"/>
+  <circle class="s1" fill="none" stroke-width="1.6" cx="92" cy="26" r="3.5"/>
+  <circle class="s1" fill="none" stroke-width="1.6" cx="112" cy="34" r="3.5"/>
+  <circle class="s1" fill="none" stroke-width="1.6" cx="134" cy="18" r="3.5"/>
+  <circle class="s1" fill="none" stroke-width="1.6" cx="156" cy="24" r="3.5"/>
 </g>

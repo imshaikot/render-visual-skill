@@ -1,18 +1,18 @@
-<!-- el-chart-stacked · stacked column chart · 180×120 · anchor top-left · schematic, three series in a1-a3 · data-accent is refused for 1-3 -->
+<!-- el-chart-stacked · stacked column chart · 180×120 · anchor top-left · schematic, three stack levels · one accent, graded by opacity · data-accent recolours it -->
 <g>
   <path class="sline" opacity="0.55" stroke-width="1" d="M8 44 H178"/>
   <path class="sline" opacity="0.55" stroke-width="1" d="M8 74 H178"/>
   <path class="sline" stroke-width="1" d="M8 6 V104 H178"/>
-  <rect class="f1" x="20" y="74" width="26" height="30"/>
-  <rect class="f2" x="20" y="50" width="26" height="24"/>
-  <rect class="f3" x="20" y="32" width="26" height="18" rx="3"/>
-  <rect class="f1" x="60" y="82" width="26" height="22"/>
-  <rect class="f2" x="60" y="52" width="26" height="30"/>
-  <rect class="f3" x="60" y="38" width="26" height="14" rx="3"/>
-  <rect class="f1" x="100" y="68" width="26" height="36"/>
-  <rect class="f2" x="100" y="48" width="26" height="20"/>
-  <rect class="f3" x="100" y="22" width="26" height="26" rx="3"/>
-  <rect class="f1" x="140" y="78" width="26" height="26"/>
-  <rect class="f2" x="140" y="62" width="26" height="16"/>
-  <rect class="f3" x="140" y="50" width="26" height="12" rx="3"/>
+  <rect class="f1" opacity="0.8" x="20" y="74" width="26" height="30"/>
+  <rect class="f1" opacity="0.5" x="20" y="50" width="26" height="24"/>
+  <rect class="f1" opacity="0.28" x="20" y="32" width="26" height="18" rx="3"/>
+  <rect class="f1" opacity="0.8" x="60" y="82" width="26" height="22"/>
+  <rect class="f1" opacity="0.5" x="60" y="52" width="26" height="30"/>
+  <rect class="f1" opacity="0.28" x="60" y="38" width="26" height="14" rx="3"/>
+  <rect class="f1" opacity="0.8" x="100" y="68" width="26" height="36"/>
+  <rect class="f1" opacity="0.5" x="100" y="48" width="26" height="20"/>
+  <rect class="f1" opacity="0.28" x="100" y="22" width="26" height="26" rx="3"/>
+  <rect class="f1" opacity="0.8" x="140" y="78" width="26" height="26"/>
+  <rect class="f1" opacity="0.5" x="140" y="62" width="26" height="16"/>
+  <rect class="f1" opacity="0.28" x="140" y="50" width="26" height="12" rx="3"/>
 </g>

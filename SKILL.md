@@ -241,10 +241,9 @@ and both built from the same includes.
   the neutral frame. Putting an accent class in `class=` instead is fatal: which one won
   would be CSS source order rather than intent.
 - **An accent the part already uses is fatal.** `data-accent="4"` on `el-server` would paint
-  the rack the same colour as its LEDs; on a multi-series chart it would merge two series.
-  Single-series parts (`el-chart-bar`, `-line`, `-area`, `-hbar`, `-gauge`, `-heatmap`,
-  `el-sparkline`) recolor freely; the multi-series ones carry `a1`–`a4` **as** the series and
-  refuse the accents they already spend.
+  the rack the same colour as its health LEDs, and on `el-stat-tile` the same colour as its
+  delta chip. Every other part spends exactly one accent, so `data-accent` works on all of
+  them.
 - **Call-site attributes win** over the part's own, and anything you nest inside the call
   site is kept after the part's markup — so a caption can ride along with the shape:
 
@@ -270,9 +269,11 @@ exist to say *"a dashboard goes here"* in an architecture figure, the way `el-da
 geometry to the real values and say so, or plot the dataset with a real charting library —
 that is still the answer this skill's own description gives for data charts.
 
-Charts are also the one place accents are **categorical rather than semantic** (§4): in
-`el-chart-pie`, `a1`–`a4` are series 1–4, not "primary / action / external / success". That
-exception stops at the chart's edge — the arrows and nodes around it keep their meanings.
+Charts hold to the same accent discipline as everything else (§4): **one accent per part**,
+graded by opacity where categories have to read apart — pie wedges, funnel stages, stack
+levels, heatmap cells. `el-chart-scatter` separates its two series by solid dots against
+hollow rings rather than by spending a second hue. Nothing here treats an accent as
+decoration, so a chart sits inside a figure without competing with the arrows around it.
 
 Copying a part's geometry into your figure still works and renders identically — reach for it
 only when you need to edit the shape itself.
