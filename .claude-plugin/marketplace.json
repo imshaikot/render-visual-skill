@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "render-visual-skill",
-  "description": "Designed PNGs from HTML — diagrams, slides, social cards and code snippets",
+  "description": "Designed PNGs from HTML — diagrams, slides, social cards, code snippets, device mockups and animated sequence GIFs",
   "owner": {
     "name": "Shahriar",
     "url": "https://github.com/imshaikot"
@@ -10,7 +10,7 @@
     {
       "name": "render-visual-skill",
       "source": "./",
-      "description": "Produce polished diagrams, presentation slides, social cards and code snippets as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Four swappable themes, animated sequence GIFs, zero npm dependencies.",
+      "description": "Architecture diagrams, presentation slides, social cards, code snippets and device mockups — authored as HTML/SVG and rendered to crisp PNGs by a local headless Chromium. Includes a 55-part element library (device frames, infrastructure shapes, schematic chart and BI parts, 29 glyphs), places your own screenshots and photos into frames or cropped to a shape, animates sequence diagrams into looping GIFs, and restyles everything through four swappable themes. Zero npm dependencies.",
       "category": "design",
       "author": { "name": "Shahriar" },
       "homepage": "https://github.com/imshaikot/render-visual-skill"
