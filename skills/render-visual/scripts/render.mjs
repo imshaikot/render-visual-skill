@@ -15,6 +15,12 @@
 // <g data-part="el-database"/> anywhere in the page is replaced with that
 // part's markup from parts/ before the render. Unknown ids are fatal.
 //
+// Local images — <img src>, <image data-image>, data-image on a framing part or
+// any other element, url() in a stylesheet — are read, format-checked and
+// inlined as data: URIs before the render. A source that cannot be read is
+// fatal: it would draw nothing at all inside a figure that still screenshots
+// as a success.
+//
 // Chrome is found automatically on macOS, Linux and Windows; CHROME_PATH overrides.
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -22,6 +28,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { assertPng, assertStylesheets, findChrome, makeWorkDir, reapOrphans, shootResilient, sweepStaleCopies } from './chrome.mjs'
 import { fail, findThemeLink, parseArgs, readInput } from './cli.mjs'
+import { describeImages, inlineImages } from './images.mjs'
 import { assertPartClasses, inlineParts } from './parts.mjs'
 
 const USAGE = 'render.mjs <input.html> <output.png> [--size WxH] [--scale N] [--theme name] [--transparent]'
@@ -73,6 +80,11 @@ if (theme) {
 const parts = inlineParts(html, { onError: (m) => fail(m) })
 html = parts.html
 
+// Images last, so a part's screen overlay is inlined through the same loader as
+// a hand-written <image data-image> and gets the same guards.
+const images = inlineImages(html, inputDir, { onError: (m) => fail(m) })
+html = images.html
+
 if (transparent) {
   // Unpaint the ground and drop the ground-level furniture; everything else
   // (surfaces, shadows, text) keeps its own alpha and composites cleanly.
@@ -82,7 +94,7 @@ if (transparent) {
 
 let source = inputFile
 let workDir = null
-if (theme || transparent || parts.used.length) {
+if (theme || transparent || parts.used.length || images.used.length) {
   // A <base href> back at the input's directory keeps every other relative
   // reference on the page resolving exactly as it would in place.
   workDir = makeWorkDir()
@@ -102,6 +114,9 @@ try {
   // fractional device-scale factor is not worth a false failure over.
   assertPng(resolve(output), Number.isInteger(scale) ? { w: w * scale, h: h * scale } : null)
   console.log(`wrote ${output} (${w}x${h} @${scale}x = ${w * scale}x${h * scale}${transparent ? ', alpha' : ''})`)
+  // Named, not counted: the cheapest way to notice you framed last week's
+  // screenshot is to see its filename and pixel size in the log.
+  for (const line of describeImages(images.used)) console.log(line)
 } catch (err) {
   console.error(err.message)
   process.exitCode = 1

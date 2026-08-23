@@ -19,7 +19,9 @@ import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, re
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { deflateSync } from 'node:zlib'
 import { assertPng, findChrome } from './chrome.mjs'
+import { decodePng } from './gif.mjs'
 
 const SCRIPTS = dirname(fileURLToPath(import.meta.url))
 const SKILL_DIR = dirname(SCRIPTS)
@@ -518,6 +520,129 @@ await test('a part that cannot render right is refused before Chrome starts', as
   }
   assert(/stroke: var\(--a1\)/.test(r.stderr), 'the message did not carry the real declaration to paste')
   assert(!existsSync(join(work, 'nocss.png')), 'a PNG was written anyway')
+  assert(isoChromes().length === 0, 'Chrome was launched for a render that could never be right')
+})
+
+/* ── images ──────────────────────────────────────────────────────────────── */
+
+// A missing image is the defect this whole module exists for: an <image href>
+// that resolves to nothing renders nothing, the frame around it still paints,
+// and assertPng sees a fully inked figure. So the invariant is not "the render
+// succeeded" — it is "those pixels are that colour".
+
+const CRC = Int32Array.from({ length: 256 }, (_, n) => {
+  let c = n
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+  return c
+})
+const crc32 = (buf) => {
+  let c = -1
+  for (const b of buf) c = CRC[(c ^ b) & 0xff] ^ (c >>> 8)
+  return (c ^ -1) >>> 0
+}
+/** A real, minimal, solid-colour PNG — no fixture binaries checked into the repo. */
+function solidPng(w, h, [r, g, b]) {
+  const stride = 1 + w * 3
+  const raw = Buffer.alloc(h * stride)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = y * stride + 1 + x * 3
+      raw[o] = r; raw[o + 1] = g; raw[o + 2] = b
+    }
+  }
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4)
+    len.writeUInt32BE(data.length)
+    const body = Buffer.concat([Buffer.from(type, 'ascii'), data])
+    const crc = Buffer.alloc(4)
+    crc.writeUInt32BE(crc32(body))
+    return Buffer.concat([len, body, crc])
+  }
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4)
+  ihdr[8] = 8; ihdr[9] = 2 // 8-bit, truecolour
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
+  ])
+}
+/** Pixels within `tol` of a colour on every channel. */
+function countNear(file, [r, g, b], tol = 24) {
+  const { rgb } = decodePng(readFileSync(file))
+  let n = 0
+  for (let i = 0; i + 2 < rgb.length; i += 3) {
+    if (Math.abs(rgb[i] - r) <= tol && Math.abs(rgb[i + 1] - g) <= tol && Math.abs(rgb[i + 2] - b) <= tol) n++
+  }
+  return n
+}
+
+// Three placements, three colours, so a working surface cannot cover for a
+// broken one: the frame screen, an <img> in HTML, and a CSS background.
+const SCREEN_RGB = [255, 0, 255]
+const IMG_RGB = [0, 255, 0]
+const BG_RGB = [255, 255, 0]
+const imagePage = (withImages) => {
+  const css = readFileSync(join(SKILL_DIR, 'templates', 'diagram.html'), 'utf8').match(/<style>[\s\S]*?<\/style>/)[0]
+  // The control is the same page with every image reference removed, not the
+  // same page pointing at nothing: a broken reference is the thing under test.
+  return '<html><head><link rel="stylesheet" href="themes/ember.css">' +
+    css.replace(/width: 1360px; height: 740px/, 'width: 900px; height: 620px') +
+    (withImages ? '<style>.bg { background-image: url(bg.png); background-size: cover; }</style>' : '') +
+    '</head><body>' +
+    (withImages ? '<img src="img.png" style="position:absolute;left:560px;top:40px;width:300px;height:160px">' : '') +
+    '<div class="bg" style="position:absolute;left:560px;top:240px;width:300px;height:160px"></div>' +
+    '<svg width="900" height="620" viewBox="0 0 900 620" fill="none">' +
+    `<g data-part="el-browser"${withImages ? ' data-image="screen.png"' : ''} transform="translate(40,40)"/>` +
+    '</svg></body></html>'
+}
+
+await test('an image reaches the pixels, on every surface that takes one', async () => {
+  writeFileSync(join(work, 'screen.png'), solidPng(64, 64, SCREEN_RGB))
+  writeFileSync(join(work, 'img.png'), solidPng(64, 64, IMG_RGB))
+  writeFileSync(join(work, 'bg.png'), solidPng(64, 64, BG_RGB))
+
+  writeFileSync(join(work, 'noimg.html'), imagePage(false))
+  const control = render('noimg.html', 'noimg.png', '--theme', 'ember', '--scale', '1')
+  assert(control.status === 0, `control exit ${control.status}: ${control.stderr.trim()}`)
+  // The colours are chosen to be absent from every theme; proving that here is
+  // what makes the counts below evidence rather than coincidence.
+  for (const [what, rgb] of [['screen', SCREEN_RGB], ['img', IMG_RGB], ['bg', BG_RGB]]) {
+    const n = countNear(join(work, 'noimg.png'), rgb)
+    assert(n < 200, `the ${what} colour already appears ${n} times without any image — pick another`)
+  }
+
+  writeFileSync(join(work, 'img.html'), imagePage(true))
+  const r = render('img.html', 'placed.png', '--theme', 'ember', '--scale', '1')
+  assert(r.status === 0, `exit ${r.status}: ${r.stderr.trim()}`)
+  assert(/image screen\.png .*png/.test(r.stdout), `the render did not report the images it placed: ${r.stdout.trim()}`)
+  // el-browser's screen is 318x154; the <img> and the background are 300x160.
+  for (const [what, rgb, least] of [['frame screen', SCREEN_RGB, 40_000], ['<img>', IMG_RGB, 40_000], ['CSS background', BG_RGB, 40_000]]) {
+    const n = countNear(join(work, 'placed.png'), rgb)
+    assert(n >= least, `the ${what} image is missing or tiny — ${n} matching pixels, expected at least ${least}`)
+  }
+})
+
+await test('an image that cannot be right is refused before Chrome starts', async () => {
+  writeFileSync(join(work, 'notreally.png'), 'this is a text file wearing a PNG name\n')
+  const cases = [
+    ['missing file', '<g data-part="el-browser" data-image="gone.png" transform="translate(60,60)"/>', /Image not found/],
+    ['not an image', '<g data-part="el-browser" data-image="notreally.png" transform="translate(60,60)"/>', /Not an image this renderer recognises/],
+    ['remote source', '<g data-part="el-browser" data-image="https://example.com/a.png" transform="translate(60,60)"/>', /Remote image source/],
+    ['part with no screen', '<g data-part="el-database" data-image="screen.png" transform="translate(60,60)"/>', /no screen for an image/],
+    ['unknown fit', '<g data-part="el-browser" data-image="screen.png" data-fit="squish" transform="translate(60,60)"/>', /not one of: cover, contain, stretch/],
+    ['shape on a frame', '<g data-part="el-browser" data-image="screen.png" data-shape="circle" transform="translate(60,60)"/>', /belong on an <image> or <img>/],
+    ['<image> with no size', '<image data-image="screen.png" x="60" y="60"/>', /needs both a width and a height/],
+    ['unknown shape', '<image data-image="screen.png" x="60" y="60" width="90" height="90" data-shape="blob"/>', /not one of: rect, rounded, circle, hex/],
+  ]
+  for (const [label, svg, pattern] of cases) {
+    figWith(svg, 'imgguard.html')
+    const started = Date.now()
+    const r = render('imgguard.html', 'imgguard.png', '--theme', 'slate', '--scale', '1')
+    assert(r.status !== 0, `${label} was accepted`)
+    assert(pattern.test(r.stderr), `${label}: unexpected message: ${r.stderr.trim()}`)
+    assert(Date.now() - started < 3000, `${label}: the check ran too late to have preceded Chrome`)
+    assert(!existsSync(join(work, 'imgguard.png')), `${label} wrote a PNG anyway`)
+  }
   assert(isoChromes().length === 0, 'Chrome was launched for a render that could never be right')
 })
 

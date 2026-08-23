@@ -1,5 +1,6 @@
-<!-- el-phone · mobile window · 120×236 · anchor top-left. -->
-<g>
+<!-- el-phone · mobile window · 120×236 · anchor top-left.
+     Screen: the full 106x222 inner panel. data-image at the call site fills it. -->
+<g data-screen="7 7 106 222 16 16 16 16">
   <rect class="node" width="120" height="236" rx="22" stroke-width="1"/>
   <rect class="fground" x="7" y="7" width="106" height="222" rx="16"/>
   <rect class="ffaint" opacity="0.5" x="44" y="17" width="32" height="9" rx="4.5"/>

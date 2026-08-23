@@ -6,6 +6,10 @@
 // templates/elements.html is itself rendered through this, which is what keeps
 // the sheet and the parts from drifting.
 //
+// A framing part additionally declares the rectangle its content sits in, as
+// `data-screen="x y w h tl tr br bl"` on its root <g>. `data-image` at the call
+// site fills exactly that rectangle — see screenOverlay below.
+//
 // Substitution happens on the temp copy, pre-launch, and every way it can go
 // wrong is fatal: an unknown id, an accent that is not 1-4, a page missing the
 // CSS the part needs. That last one is the reason this file is not a ten-line
@@ -15,6 +19,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { SKILL_ROOT, distance } from './cli.mjs'
+import { ALIGNS, FITS } from './images.mjs'
+import { clipDefs, roundedRectPath } from './markup.mjs'
 
 export const PARTS_DIR = join(SKILL_ROOT, 'parts')
 
@@ -69,6 +75,41 @@ function findClose(html, from) {
   return null
 }
 
+/** Every part that declares a screen an image can go into, by bare id, sorted. */
+export function listScreenParts(dir = PARTS_DIR) {
+  return listParts(dir).filter((id) => /\bdata-screen\s*=/.test(readFileSync(join(dir, `${id}.svg`), 'utf8')))
+}
+
+/**
+ * The markup that drops an image into a frame's declared screen.
+ *
+ * Three pieces, and each earns its place: a clip path, because a screen follows
+ * the shell's corners and a plain rect would square them off; an opaque
+ * backdrop, because `data-fit="contain"` letterboxes and the part's own
+ * skeleton bars would otherwise show through the bars; and the `<image>` itself,
+ * left unresolved for images.mjs to inline so that both this and a hand-written
+ * `<image data-image>` go through one loader and one set of guards.
+ *
+ * The backdrop takes its colour from `var(--ground)` in an inline style rather
+ * than a utility class: a class would have to be defined by whatever page the
+ * part lands on, and assertPartClasses can only see classes the part file
+ * itself carries.
+ */
+function screenOverlay(id, screen, src, fit, align, seq, onError) {
+  const nums = screen.trim().split(/[\s,]+/).map(Number)
+  if (nums.length !== 8 || !nums.every(Number.isFinite)) {
+    onError(`Part "${id}" has a malformed data-screen="${screen}" — it must be 8 numbers: x y w h tl tr br bl.`)
+  }
+  const [x, y, w, h, tl, tr, br, bl] = nums
+  const clip = `rv-screen-${seq}`
+  return (
+    clipDefs(clip, `<path d="${roundedRectPath(x, y, w, h, [tl, tr, br, bl])}"/>`) +
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${clip})" style="fill:var(--ground)"/>` +
+    `<image data-image="${src}" data-fit="${fit}" data-align="${align}" ` +
+    `x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${clip})"/>`
+  )
+}
+
 /**
  * Replace every `<g data-part="id" …>` with the part's markup.
  *
@@ -78,12 +119,15 @@ function findClose(html, from) {
  * and a second accent class in the union is fatal rather than left to CSS
  * source order. Content inside the call site is kept, after the part's, so a
  * caption can ride along with the shape it labels.
+ *
+ * `data-image` at the call site fills the part's declared screen, if it has one.
  */
 export function inlineParts(html, { dir = PARTS_DIR, onError = (m) => { throw new Error(m) } } = {}) {
   const used = new Set()
   const available = listParts(dir)
   let out = ''
   let cursor = 0
+  let screens = 0
   const open = /<g\b[^>]*\bdata-part\s*=\s*"([^"]*)"[^>]*?(\/?)>/g
 
   for (let m; (m = open.exec(html)); ) {
@@ -99,8 +143,25 @@ export function inlineParts(html, { dir = PARTS_DIR, onError = (m) => { throw ne
 
     const attrs = parseAttrs(tag)
     const accentRaw = attrs.get('data-accent')
-    attrs.delete('data-part')
-    attrs.delete('data-accent')
+    const imageSrc = attrs.get('data-image')
+    const fit = attrs.get('data-fit') ?? 'cover'
+    const align = attrs.get('data-align') ?? 'center'
+    for (const a of ['data-part', 'data-accent', 'data-image', 'data-fit', 'data-align', 'data-shape', 'data-radius']) attrs.delete(a)
+    if (imageSrc === undefined) {
+      for (const a of ['data-fit', 'data-align']) {
+        if (tag.includes(`${a}=`)) onError(`data-part="${id}" has ${a} but no data-image, so it does nothing.`)
+      }
+    } else {
+      if (!imageSrc) onError(`data-part="${id}" has an empty data-image — give it a path to an image file.`)
+      if (!FITS.includes(fit)) onError(`data-fit="${fit}" on data-part="${id}" is not one of: ${FITS.join(', ')}.`)
+      if (!ALIGNS.includes(align)) onError(`data-align="${align}" on data-part="${id}" is not one of: ${ALIGNS.join(', ')}.`)
+      if (/\bdata-(shape|radius)=/.test(tag)) {
+        onError(
+          `data-part="${id}" carries data-shape/data-radius, which belong on an <image> or <img>.\n` +
+            "  A frame crops to its own screen; the shell's corners are the shape.",
+        )
+      }
+    }
     if (accentRaw !== undefined && !['1', '2', '3', '4'].includes(accentRaw)) {
       onError(`data-part="${id}" has data-accent="${accentRaw}" — it must be 1, 2, 3 or 4 (see the accent semantics table).`)
     }
@@ -122,6 +183,22 @@ export function inlineParts(html, { dir = PARTS_DIR, onError = (m) => { throw ne
     if (accentRaw) {
       body = recolor(body, accentRaw)
       if (rootAttrs.has('class')) rootAttrs.set('class', recolor(`class="${rootAttrs.get('class')}"`, accentRaw).slice(7, -1))
+    }
+
+    const screen = rootAttrs.get('data-screen')
+    rootAttrs.delete('data-screen') // machine-readable metadata, never markup
+    if (imageSrc !== undefined) {
+      if (!screen) {
+        const framed = listScreenParts(dir)
+        onError(
+          `data-part="${id}" has no screen for an image to go into.\n` +
+            `  Parts that do (${framed.length}): ${framed.join(', ') || '(none)'}\n` +
+            '  For any other shape, place an <image data-image="..." x y width height> yourself.',
+        )
+      }
+      // Appended to the part's own markup, so the screen covers the skeleton
+      // content the frame ships with rather than fighting it for z-order.
+      body += screenOverlay(id, screen, imageSrc, fit, align, ++screens, onError)
     }
 
     // merge: part's attributes first, call site overrides, class unioned
