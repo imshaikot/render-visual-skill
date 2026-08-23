@@ -646,6 +646,40 @@ await test('an image that cannot be right is refused before Chrome starts', asyn
   assert(isoChromes().length === 0, 'Chrome was launched for a render that could never be right')
 })
 
+await test('every theme declares the same tokens, alpha components included', async () => {
+  // No Chrome for this one: it is a text check, and it is here because the
+  // failure it catches is silent. A theme missing --a3-raw does not fail a
+  // render — every oklch(var(--a3-raw) / 12%) on the page resolves to nothing
+  // and paints nothing, inside a figure that screenshots as a perfect success.
+  const dir = join(SKILL_DIR, 'themes')
+  const files = ls(dir, /\.css$/)
+  assert(files.length >= 4, `expected the shipped themes, found ${files.length}`)
+  const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '')
+  const declared = (css) => new Set([...strip(css).matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]))
+  const reference = declared(readFileSync(join(dir, 'ember.css'), 'utf8'))
+  assert(reference.has('--a1-raw'), 'ember.css lost its alpha components, so the reference set is wrong')
+  for (const f of files) {
+    const css = strip(readFileSync(join(dir, f), 'utf8'))
+    const have = declared(css)
+    const missing = [...reference].filter((t) => !have.has(t))
+    const extra = [...have].filter((t) => !reference.has(t))
+    assert(!missing.length, `${f} declares no ${missing.join(', ')} — a page reading one renders it as nothing`)
+    assert(!extra.length, `${f} declares ${extra.join(', ')}, which no other theme does`)
+    for (const [, name] of css.matchAll(/var\((--[a-z0-9-]+)/gi)) {
+      assert(have.has(name), `${f} reads ${name}, which it never declares`)
+    }
+    // The alpha contract: a component token has to be three bare numbers, or
+    // every grade composed from it is an invalid colour that draws nothing.
+    for (const [, name, value] of css.matchAll(/(--[a-z0-9-]+-raw)\s*:\s*([^;]+);/gi)) {
+      assert(
+        /^[\d.]+\s+[\d.]+\s+[\d.]+$/.test(value.trim()),
+        `${f}: ${name} is "${value.trim()}" — an alpha component must be three bare numbers, ` +
+          `or oklch(var(${name}) / 20%) resolves to nothing`,
+      )
+    }
+  }
+})
+
 /* ───────────────────────────────────────────────────────────────────────── */
 
 const failed = results.filter((r) => !r.ok)
