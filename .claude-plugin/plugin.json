@@ -1,7 +1,7 @@
 {
   "name": "render-visual-skill",
   "description": "Produce polished diagrams, presentation slides, social cards and code snippets as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Four swappable themes, animated sequence GIFs, zero npm dependencies.",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "author": {
     "name": "Shahriar",
     "url": "https://github.com/imshaikot"
