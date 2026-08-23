@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal | blueprint | frost | neon | sepia. If you copied this
+         file out of the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 17px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part referenced with data-part relies on these */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      .hub { fill: oklch(var(--a1-raw) / 12%); stroke: var(--a1); }
+      .hub-title { font: 600 22px var(--font-display); fill: var(--ink); }
+      /* the one branch this figure argues for — a2, and nothing else on the page
+         spends a2, so it reads as emphasis rather than as a category */
+      .focus { fill: oklch(var(--a2-raw) / 12%); stroke: var(--a2); }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══ MIND MAP — one question in the middle, the answers around it ══
+         Geometry: hub 280×76 at (540,344), centre (680,382).
+           right branch pills 280×58 at x=900, rows y=130 / 340 / 550
+           left  branch pills 280×58 at x=180, same rows (mirrored)
+           leaves: a 12px tick then mono text, 26px and 48px below the pill
+         Curves leave the hub horizontally and arrive horizontally, so they read
+         as one continuous stroke: C x+42 382, xPill−42 rowMid, xPill rowMid.
+         ACCENTS: branches are ONE accent (a1) — six hues would be decoration,
+         which §4 rules out. Spend a second accent only on the branch the figure
+         argues for, as .focus does here. -->
+    <svg width="1360" height="740" viewBox="0 0 1360 740" fill="none">
+
+      <text class="kicker" x="70" y="58">PLATFORM · WHERE NEXT QUARTER GOES</text>
+
+      <!-- branch curves, drawn before the pills so the pills cover their ends -->
+      <g fill="none" stroke-width="2">
+        <path class="s1" opacity="0.8" d="M820 382 C 862 382, 858 159, 900 159"/>
+        <path class="s2" d="M820 382 C 862 382, 858 369, 900 369"/>
+        <path class="s1" opacity="0.8" d="M820 382 C 862 382, 858 579, 900 579"/>
+        <path class="s1" opacity="0.8" d="M540 382 C 498 382, 502 159, 460 159"/>
+        <path class="s1" opacity="0.8" d="M540 382 C 498 382, 502 369, 460 369"/>
+        <path class="s1" opacity="0.8" d="M540 382 C 498 382, 502 579, 460 579"/>
+      </g>
+
+      <!-- the hub: the question, not a title -->
+      <rect class="hub" x="540" y="344" width="280" height="76" rx="38" stroke-width="1.4"/>
+      <text class="hub-title" x="680" y="390" text-anchor="middle">Q3 · Platform</text>
+
+      <!-- right branches -->
+      <g transform="translate(900, 130)">
+        <rect class="node" width="280" height="58" rx="16" stroke-width="1"/>
+        <g data-part="g-bolt" transform="translate(18, 15)"/>
+        <text class="title" x="58" y="37">Performance</text>
+      </g>
+      <g class="sfaint" stroke-width="1.4" opacity="0.7"><path d="M900 210 H 912 M900 232 H 912"/></g>
+      <text class="sub" x="920" y="214">p95 under 200 ms</text>
+      <text class="sub" x="920" y="236">edge cache · warm start</text>
+
+      <g transform="translate(900, 340)">
+        <rect class="focus" width="280" height="58" rx="16" stroke-width="1.4"/>
+        <g data-part="g-check" data-accent="2" transform="translate(18, 15)"/>
+        <text class="title" x="58" y="37">Reliability</text>
+      </g>
+      <g class="sfaint" stroke-width="1.4" opacity="0.7"><path d="M900 420 H 912 M900 442 H 912"/></g>
+      <text class="sub" x="920" y="424">error budget · 99.9%</text>
+      <text class="sub" x="920" y="446">chaos drills, monthly</text>
+
+      <g transform="translate(900, 550)">
+        <rect class="node" width="280" height="58" rx="16" stroke-width="1"/>
+        <g data-part="g-chart-line" transform="translate(18, 15)"/>
+        <text class="title" x="58" y="37">Insights</text>
+      </g>
+      <g class="sfaint" stroke-width="1.4" opacity="0.7"><path d="M900 630 H 912 M900 652 H 912"/></g>
+      <text class="sub" x="920" y="634">usage events, first-party</text>
+      <text class="sub" x="920" y="656">cohort views for support</text>
+
+      <!-- left branches: mirrored, so their leaves end where the pill ends -->
+      <g transform="translate(180, 130)">
+        <rect class="node" width="280" height="58" rx="16" stroke-width="1"/>
+        <g data-part="g-user" transform="translate(18, 15)"/>
+        <text class="title" x="58" y="37">Onboarding</text>
+      </g>
+      <g class="sfaint" stroke-width="1.4" opacity="0.7"><path d="M448 210 H 460 M448 232 H 460"/></g>
+      <text class="sub" x="440" y="214" text-anchor="end">guided setup, 4 steps</text>
+      <text class="sub" x="440" y="236" text-anchor="end">a sample project</text>
+
+      <g transform="translate(180, 340)">
+        <rect class="node" width="280" height="58" rx="16" stroke-width="1"/>
+        <g data-part="g-lock" transform="translate(18, 15)"/>
+        <text class="title" x="58" y="37">Security</text>
+      </g>
+      <g class="sfaint" stroke-width="1.4" opacity="0.7"><path d="M448 420 H 460 M448 442 H 460"/></g>
+      <text class="sub" x="440" y="424" text-anchor="end">SSO · SCIM</text>
+      <text class="sub" x="440" y="446" text-anchor="end">audit log, exportable</text>
+
+      <g transform="translate(180, 550)">
+        <rect class="node" width="280" height="58" rx="16" stroke-width="1"/>
+        <g data-part="g-gauge" transform="translate(18, 15)"/>
+        <text class="title" x="58" y="37">Cost</text>
+      </g>
+      <g class="sfaint" stroke-width="1.4" opacity="0.7"><path d="M448 630 H 460 M448 652 H 460"/></g>
+      <text class="sub" x="440" y="634" text-anchor="end">spot workers</text>
+      <text class="sub" x="440" y="656" text-anchor="end">tiered storage</text>
+
+      <text class="sub" x="70" y="710" opacity="0.75">Six branches is the ceiling; a seventh means the hub is really two questions. Leaves are evidence, not more branches.</text>
+    </svg>
+  </body>
+</html>

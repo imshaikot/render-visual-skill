@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal | blueprint | frost | neon | sepia. If you copied this
+         file out of the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 17px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part referenced with data-part relies on these */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      /* the lane band is a wash, never a surface: the step cards have to stay
+         the brightest thing sitting in it */
+      .lane { fill: oklch(var(--ink-raw) / 5%); }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══ SWIMLANE — who owns each step, and where the work is handed over ══
+         Grid, and the only numbers to keep straight:
+           lane bands  x=250 w=1040 · A y=100 (mid 184) · B y=284 (mid 368) · C y=468 (mid 552), all h=168
+           lane headers x=70 w=170, same y/h as the band
+           step cards  190×76 at columns x=300 / 560 / 820 / 1080, y = lane mid − 38
+         A card sits in the lane that OWNS the step. Every arrow that leaves a
+         lane is a handoff — the place work waits — so keep them few, and label
+         all of them. Forward path a1, handback a2, exception a3. -->
+    <svg width="1360" height="740" viewBox="0 0 1360 740" fill="none">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f1" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f2" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f3" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+      </defs>
+
+      <text class="kicker" x="70" y="58">ORDERS · WHO DOES WHAT, AND WHERE IT WAITS</text>
+
+      <!-- lane bands -->
+      <rect class="lane" x="250" y="100" width="1040" height="168" rx="14"/>
+      <rect class="lane" x="250" y="284" width="1040" height="168" rx="14"/>
+      <rect class="lane" x="250" y="468" width="1040" height="168" rx="14"/>
+
+      <!-- lane headers: glyph high, name and role beneath -->
+      <g transform="translate(70, 100)">
+        <rect class="node" width="170" height="168" rx="14" stroke-width="1"/>
+        <g data-part="g-users" transform="translate(22, 44)"/>
+        <text class="title" x="22" y="108">Customer</text>
+        <text class="sub" x="22" y="130">the buyer</text>
+      </g>
+      <g transform="translate(70, 284)">
+        <rect class="node" width="170" height="168" rx="14" stroke-width="1"/>
+        <g data-part="g-lock" transform="translate(22, 44)"/>
+        <text class="title" x="22" y="108">Payments</text>
+        <text class="sub" x="22" y="130">psp + ledger</text>
+      </g>
+      <g transform="translate(70, 468)">
+        <rect class="node" width="170" height="168" rx="14" stroke-width="1"/>
+        <g data-part="g-layers" transform="translate(22, 44)"/>
+        <text class="title" x="22" y="108">Fulfilment</text>
+        <text class="sub" x="22" y="130">warehouse</text>
+      </g>
+
+      <!-- step cards: glyph at (16,24), title baseline 34, subtitle baseline 58 -->
+      <g transform="translate(300, 146)">
+        <rect class="node" width="190" height="76" rx="14" stroke-width="1"/>
+        <g data-part="g-mobile" transform="translate(16, 24)"/>
+        <text class="title" x="56" y="34">Place order</text>
+        <text class="sub" x="56" y="58">web · app</text>
+      </g>
+      <g transform="translate(560, 330)">
+        <rect class="node" width="190" height="76" rx="14" stroke-width="1"/>
+        <g data-part="g-key" transform="translate(16, 24)"/>
+        <text class="title" x="56" y="34">Authorize</text>
+        <text class="sub" x="56" y="58">3-D Secure</text>
+      </g>
+      <g transform="translate(820, 514)">
+        <rect class="node" width="190" height="76" rx="14" stroke-width="1"/>
+        <g data-part="g-gear" transform="translate(16, 24)"/>
+        <text class="title" x="56" y="34">Pick &amp; pack</text>
+        <text class="sub" x="56" y="58">sla 4 h</text>
+      </g>
+      <g transform="translate(1080, 146)">
+        <rect class="node" width="190" height="76" rx="14" stroke-width="1"/>
+        <g data-part="g-mail" transform="translate(16, 24)"/>
+        <text class="title" x="56" y="34">Track order</text>
+        <text class="sub" x="56" y="58">email · sms</text>
+      </g>
+      <!-- the exception lives in the lane that owns it, coloured a3 like its arrow -->
+      <g transform="translate(1080, 330)">
+        <rect class="node" width="190" height="76" rx="14" stroke-width="1"/>
+        <g data-part="g-warn" data-accent="3" transform="translate(16, 24)"/>
+        <text class="title" x="56" y="34">Card declined</text>
+        <text class="sub" x="56" y="58">retry ×3</text>
+      </g>
+
+      <!-- start terminator -->
+      <circle class="f1" cx="266" cy="184" r="5"/>
+      <path class="s1" d="M272 184 H 296" stroke-width="1.8" marker-end="url(#m1)"/>
+
+      <!-- handoffs: drop to the receiving lane's mid line, then run in -->
+      <path class="s1" d="M395 222 V 368 H 556" stroke-width="1.8" marker-end="url(#m1)"/>
+      <text class="lbl f1" x="476" y="352" text-anchor="middle">order id</text>
+
+      <path class="s1" d="M655 406 V 552 H 816" stroke-width="1.8" marker-end="url(#m1)"/>
+      <text class="lbl f1" x="736" y="536" text-anchor="middle">authorized</text>
+
+      <!-- exception: stays in Payments, so it never leaves the lane -->
+      <path class="s3" d="M754 368 H 1076" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#m3)"/>
+      <text class="lbl f3" x="915" y="352" text-anchor="middle">declined</text>
+
+      <!-- handback to the customer. Where it crosses the exception line it hops:
+           V y+9  A 9 9 0 0 0 x y−9  V … — never draw straight through. -->
+      <path class="s2" d="M1014 552 H 1035 V 377 A 9 9 0 0 0 1035 359 V 184 H 1076"
+            stroke-width="1.8" marker-end="url(#m2)"/>
+      <text class="lbl f2" x="1026" y="250" text-anchor="end">shipped · tracking no.</text>
+
+      <text class="sub" x="70" y="700" opacity="0.75">Lanes are owners, not stages. Count the arrows that cross one: each is a handoff, and every handoff is somewhere the order can sit still.</text>
+    </svg>
+  </body>
+</html>
