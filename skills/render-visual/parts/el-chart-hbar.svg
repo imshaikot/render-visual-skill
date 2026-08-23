@@ -1,12 +1,16 @@
-<!-- el-chart-hbar · bar chart · 180×120 · anchor top-left · schematic, one series in a1 over a faint track · data-accent recolours it -->
+<!-- el-chart-hbar · bar chart · 180×120 · anchor top-left · schematic, over a faint track · one accent, graded by opacity · data-accent recolours it -->
 <g>
   <path class="sline" stroke-width="1" d="M8 6 V114"/>
   <rect class="ffaint" opacity="0.1" x="10" y="12" width="160" height="16" rx="4"/>
-  <rect class="f1" x="10" y="12" width="148" height="16" rx="4"/>
+  <rect class="f1" opacity="0.26" x="10" y="12" width="148" height="16" rx="4"/>
+  <rect class="s1" x="10" y="12" width="148" height="16" rx="4" stroke-width="1.6"/>
   <rect class="ffaint" opacity="0.1" x="10" y="39" width="160" height="16" rx="4"/>
-  <rect class="f1" x="10" y="39" width="104" height="16" rx="4"/>
+  <rect class="f1" opacity="0.26" x="10" y="39" width="104" height="16" rx="4"/>
+  <rect class="s1" x="10" y="39" width="104" height="16" rx="4" stroke-width="1.6"/>
   <rect class="ffaint" opacity="0.1" x="10" y="66" width="160" height="16" rx="4"/>
-  <rect class="f1" x="10" y="66" width="126" height="16" rx="4"/>
+  <rect class="f1" opacity="0.26" x="10" y="66" width="126" height="16" rx="4"/>
+  <rect class="s1" x="10" y="66" width="126" height="16" rx="4" stroke-width="1.6"/>
   <rect class="ffaint" opacity="0.1" x="10" y="93" width="160" height="16" rx="4"/>
-  <rect class="f1" x="10" y="93" width="72" height="16" rx="4"/>
+  <rect class="f1" opacity="0.26" x="10" y="93" width="72" height="16" rx="4"/>
+  <rect class="s1" x="10" y="93" width="72" height="16" rx="4" stroke-width="1.6"/>
 </g>

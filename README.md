@@ -38,11 +38,13 @@ Every part is built from theme tokens, so it restyles with the theme like everyt
 
 That library includes the standard chart vocabulary — pie, donut, bar, line, area, stacked,
 scatter, funnel, gauge, heatmap, sparkline — plus BI furniture: a dashboard window, KPI tiles
-and a data table. These are **schematics of charts, not charts**: every proportion in them is
-fixed and arbitrary, so they can say *"a dashboard goes here"* in a figure without pretending
-to be data. Plot real numbers with a real charting library.
+and a data table. Each spends a single accent, graded by opacity where
+categories must read apart, so a chart sits in a figure without competing with the arrows
+around it. And these are **schematics of charts, not charts**: every proportion in them is
+fixed and arbitrary, so they can say *"a dashboard goes here"* without pretending to be data.
+Plot real numbers with a real charting library.
 
-![chart and BI parts, paper theme](previews/charts-paper.png)
+![chart and BI parts, ember theme](previews/charts-ember.png)
 
 Code snippets get a Carbon-style window — hand-highlighted with a fixed token→accent
 mapping, line numbers, a highlight line, diff rows — in any of the four themes:

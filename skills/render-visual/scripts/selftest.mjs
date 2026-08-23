@@ -493,7 +493,7 @@ await test('a part that cannot render right is refused before Chrome starts', as
     ['two accent classes', '<g data-part="g-key" class="s3" transform="translate(300,300)"/>', /two accent classes/],
     ['unclosed call site', '<g data-part="el-database" transform="translate(300,300)">', /never closed/],
     ['accent already used by the part', '<g data-part="el-server" data-accent="4" transform="translate(300,300)"/>', /already uses accent 4/],
-    ['accent onto a chart series', '<g data-part="el-chart-pie" data-accent="3" transform="translate(300,300)"/>', /already uses accent 3/],
+    ['accent onto a semantic mark', '<g data-part="el-stat-tile" data-accent="4" transform="translate(300,300)"/>', /already uses accent 4/],
   ]
   for (const [label, svg, pattern] of cases) {
     figWith(svg, 'guard.html')

@@ -1,4 +1,4 @@
-<!-- el-chart-line · line chart · 180×120 · anchor top-left · schematic, one series in a1 · data-accent recolours it -->
+<!-- el-chart-line · line chart · 180×120 · anchor top-left · schematic, one accent, graded by opacity · data-accent recolours it -->
 <g>
   <path class="sline" opacity="0.55" stroke-width="1" d="M8 44 H178"/>
   <path class="sline" opacity="0.55" stroke-width="1" d="M8 74 H178"/>
