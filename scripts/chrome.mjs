@@ -3,7 +3,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { accessSync, closeSync, constants, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, dirname, join, resolve } from 'node:path'
-import { decodePng } from './gif.mjs'
+import { decodePng, inspectPng } from './gif.mjs'
 
 // Ordered by preference: Chrome first because it is the most-tested engine here.
 // CHROME_PATH is handled separately in findChrome — it is an override, and an
@@ -601,22 +601,92 @@ export async function shootResilient(chrome, url, out, w, h, scale, opts = {}) {
  * stops at the ninth distinct color, so a real figure costs a millisecond or
  * two; only a genuinely blank canvas scans the whole grid.
  */
-export function assertRendered(file) {
+// Luminance spread below this means nothing but background and furniture got
+// painted. Measured, not guessed: across the six shipped previews the spread
+// runs 152-240, and across content-stripped renders in all four themes it runs
+// 16-32. 64 sits ~2.4x below the worst real render and 2x above the worst
+// degenerate one. See also INK_FLOOR_RATIO.
+const INK_SPREAD_MIN = 64
+// Luma buckets holding fewer than this fraction of samples are ignored, so a
+// handful of stray antialiased pixels cannot fake a spread.
+const INK_FLOOR_RATIO = 0.0002
+
+/**
+ * Reject a PNG that is corrupt, the wrong size, or carries no content.
+ *
+ * Three distinct failures, and they need different treatment:
+ *
+ *  - **Corrupt** (no signature, no IEND, a chunk running past the end) is a
+ *    failed write and always fatal. This used to be swallowed: any decode error
+ *    was treated as "not evidence of a bad render", so a PNG truncated to 60%
+ *    of its bytes was reported as a success.
+ *  - **Wrong dimensions** catches the whole --size/--scale class from the output
+ *    side, after Chrome rather than before it.
+ *  - **No content** is the render that Chrome reports as a complete success. The
+ *    old distinct-colour test cannot see it: the templates' own .glow/.dots
+ *    gradient paints 169 colours on a canvas with every element stripped, so
+ *    the colour count sails past any sane threshold while the image is empty.
+ *    Luminance spread separates them, because content means ink against ground.
+ *
+ * A PNG variant this decoder does not support is *not* a failure — it warns and
+ * abstains, so an unusual Chrome build cannot start rejecting good images.
+ */
+export function assertPng(file, expect = null) {
+  const buf = readFileSync(file)
+  const info = inspectPng(buf)
+  if (!info.signature) {
+    throw new Error(`${file} is not a PNG (${buf.length} bytes). Chrome wrote something else, or nothing.`)
+  }
+  if (!info.hasIhdr || info.truncated) {
+    throw new Error(
+      `${file} is a truncated PNG — ${buf.length} bytes with no IEND chunk. ` +
+        'The screenshot was interrupted mid-write. The file is left in place for inspection.',
+    )
+  }
+  if (expect && (info.width !== expect.w || info.height !== expect.h)) {
+    throw new Error(
+      `${file} is ${info.width}x${info.height}, expected ${expect.w}x${expect.h}. ` +
+        'The page rendered at a size the arguments did not ask for — check the body\'s ' +
+        'width/height declaration and --size.',
+    )
+  }
+
   let rgb
   try {
-    ;({ rgb } = decodePng(readFileSync(file)))
-  } catch {
-    return // a PNG we cannot decode is not evidence of a bad render
+    ;({ rgb } = decodePng(buf))
+  } catch (err) {
+    if (err.unsupported) {
+      console.error(`note: ${file} is a PNG variant this build cannot inspect (${err.message}) — content not verified.`)
+      return info
+    }
+    throw err
   }
-  const seen = new Set()
+
   const step = Math.max(1, Math.floor(rgb.length / 3 / 20_000)) * 3
+  const seen = new Set()
+  const buckets = new Int32Array(32)
+  let samples = 0
   for (let i = 0; i + 2 < rgb.length; i += step) {
-    seen.add((rgb[i] << 16) | (rgb[i + 1] << 8) | rgb[i + 2])
-    if (seen.size > 8) return
+    const r = rgb[i], g = rgb[i + 1], b = rgb[i + 2]
+    if (seen.size <= 4096) seen.add((r << 16) | (g << 8) | b)
+    buckets[Math.min(31, (0.2126 * r + 0.7152 * g + 0.0722 * b) >> 3)]++
+    samples++
   }
-  throw new Error(
-    `${file} rendered essentially blank (${seen.size} distinct color${seen.size === 1 ? '' : 's'} across the canvas). ` +
-      'The usual causes are a stylesheet that loaded but defined none of the theme tokens, ' +
-      'or content positioned outside the body box. The file is left in place for inspection.',
-  )
+  const floor = Math.max(1, Math.round(samples * INK_FLOOR_RATIO))
+  let lo = -1, hi = -1
+  for (let i = 0; i < 32; i++) if (buckets[i] >= floor) { if (lo < 0) lo = i; hi = i }
+  const spread = lo < 0 ? 0 : (hi - lo) * 8
+
+  if (spread < INK_SPREAD_MIN) {
+    throw new Error(
+      `${file} rendered with no content (${seen.size} distinct colour${seen.size === 1 ? '' : 's'}, ` +
+        `luminance spread ${spread} of a required ${INK_SPREAD_MIN}). ` +
+        'The usual causes are a stylesheet that loaded but defined none of the theme tokens, ' +
+        'or content positioned outside the body box. The file is left in place for inspection.',
+    )
+  }
+  return info
 }
+
+
+
