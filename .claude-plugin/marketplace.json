@@ -10,7 +10,7 @@
     {
       "name": "render-visual-skill",
       "source": "./",
-      "description": "Architecture diagrams, presentation slides, social cards, code snippets and device mockups — authored as HTML/SVG and rendered to crisp PNGs by a local headless Chromium. Includes a 55-part element library (device frames, infrastructure shapes, schematic chart and BI parts, 29 glyphs), places your own screenshots and photos into frames or cropped to a shape, animates sequence diagrams into looping GIFs, and restyles everything through four swappable themes. Zero npm dependencies.",
+      "description": "Architecture diagrams, presentation slides, social cards, code snippets and device mockups — authored as HTML/SVG and rendered to crisp PNGs by a local headless Chromium. Includes a 55-part element library (device frames, infrastructure shapes, schematic chart and BI parts, 29 glyphs), places your own screenshots and photos into frames or cropped to a shape, animates sequence diagrams into looping GIFs, and restyles everything through eight swappable themes. Zero npm dependencies.",
       "category": "design",
       "author": { "name": "Shahriar" },
       "homepage": "https://github.com/imshaikot/render-visual-skill"

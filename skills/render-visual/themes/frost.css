@@ -1,0 +1,33 @@
+/* rendercraft theme: frost — light UI. Cool white, geometric sans, glass surfaces. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --theme-name: "frost";
+  /* Components first — see ember.css for the contract: oklch(var(--a1-raw) / 20%). */
+  --ground-raw: 0.975 0.006 245;
+  --surface-raw: 1 0 0;
+  --ink-raw: 0.27 0.028 258;
+  --a1-raw: 0.55 0.18 265;   /* indigo — primary, forward paths */
+  --a2-raw: 0.56 0.1 195;    /* teal — actions, returns */
+  --a3-raw: 0.55 0.2 335;    /* magenta — external, alerts */
+  --a4-raw: 0.55 0.13 150;   /* green — success */
+
+  --ground: oklch(var(--ground-raw));
+  /* Glass, not paint: white at 88% so a surface over the glow reads as frost. */
+  --surface: oklch(var(--surface-raw) / 88%);
+  --line: oklch(0.45 0.05 258 / 18%);
+  --ink: oklch(var(--ink-raw));
+  --ink-dim: oklch(0.46 0.03 258);
+  --ink-faint: oklch(0.62 0.025 258);
+  --a1: oklch(var(--a1-raw));
+  --a2: oklch(var(--a2-raw));
+  --a3: oklch(var(--a3-raw));
+  --a4: oklch(var(--a4-raw));
+  --grad: linear-gradient(100deg, oklch(0.27 0.028 258) 8%, oklch(0.55 0.18 265) 92%);
+  --glow1: oklch(0.78 0.11 265);
+  --glow2: oklch(0.84 0.08 195);
+  --glow-opacity: 0.22;
+  --dot: oklch(0.45 0.05 258 / 9%);
+  --shadow: 0 26px 60px -26px oklch(0.4 0.06 260 / 0.3);
+  --font-display: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
