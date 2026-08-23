@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal | blueprint | frost | neon | sepia. If you copied this
+         file out of the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 17px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part referenced with data-part relies on these */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      /* «stereotype» — what KIND of node this is; UML sets it above the name */
+      .st { font: 500 11.5px var(--font-mono); fill: var(--ink-faint); }
+      .art { fill: oklch(var(--ink-raw) / 4%); stroke: var(--line); }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══ DEPLOYMENT — which artifact ships to which machine, over what ══
+         Three environments, split by the dashed rules at x=290 and x=660.
+         el-cube is the node: 260×170, front face 240×150 at (+0,+20). Its contents
+         are a SIBLING group on the same origin, never nested in the call site —
+         includes are not recursive, so a data-part inside one is left unresolved.
+         Inside that group: «stereotype» at +26, the name at +52, detail at +74,
+         and the artifact chip at +88 (200×44).
+         Links carry the PROTOCOL, not the payload — a deployment diagram answers
+         "over what wire", and the payload question belongs to a sequence diagram.
+         a1 request path · a2 state and jobs · a3 anything third-party. -->
+    <svg width="1360" height="740" viewBox="0 0 1360 740" fill="none">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f1" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f2" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f3" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+      </defs>
+
+      <text class="kicker" x="70" y="58">RELEASE 4.2 · WHAT LANDS WHERE</text>
+
+      <!-- environment rules and their names -->
+      <g class="sline" stroke-width="1.2" stroke-dasharray="8 8" opacity="0.7">
+        <path d="M290 130 V 640 M660 130 V 640"/>
+      </g>
+      <text class="sec" x="70" y="110">DEVICE</text>
+      <text class="sec" x="330" y="110">EDGE</text>
+      <text class="sec" x="700" y="110">CLOUD REGION · EU-WEST-1</text>
+
+      <!-- ── device ── a frame is a node too; the chip beneath is its artifact -->
+      <g data-part="el-phone" transform="translate(100, 170)"/>
+      <text class="st" x="160" y="434" text-anchor="middle">«device»</text>
+      <text class="title" x="160" y="458" text-anchor="middle">Handset</text>
+      <rect class="art" x="86" y="478" width="148" height="44" rx="10" stroke-width="1"/>
+      <g data-part="g-file" transform="translate(100, 487)"/>
+      <text class="sub" x="138" y="506">app.ipa · 42 MB</text>
+
+      <!-- ── edge ── -->
+      <g data-part="el-cube" transform="translate(330, 210)"/>
+      <g transform="translate(330, 210)">
+        <text class="st" x="20" y="46">«execution environment»</text>
+        <text class="title" x="20" y="72">Edge PoP</text>
+        <text class="sub" x="20" y="94">94 cities · 30 ms</text>
+        <rect class="art" x="20" y="108" width="200" height="44" rx="10" stroke-width="1"/>
+        <g data-part="g-layers" transform="translate(34, 117)"/>
+        <text class="sub" x="72" y="136">static · waf</text>
+      </g>
+
+      <!-- the legend earns its place: nobody reads «» notation the first time -->
+      <rect class="node" x="330" y="450" width="300" height="150" rx="14" stroke-width="1"/>
+      <text class="sec" x="352" y="482">READING THIS DIAGRAM</text>
+      <text class="sub" x="352" y="512">«device» · the hardware</text>
+      <text class="sub" x="352" y="538">«exec env» · the runtime</text>
+      <text class="sub" x="352" y="564">«artifact» · the file shipped</text>
+
+      <!-- ── cloud ── -->
+      <g data-part="el-cube" transform="translate(700, 150)"/>
+      <g transform="translate(700, 150)">
+        <text class="st" x="20" y="46">«execution environment»</text>
+        <text class="title" x="20" y="72">App server</text>
+        <text class="sub" x="20" y="94">3 replicas · blue/green</text>
+        <rect class="art" x="20" y="108" width="200" height="44" rx="10" stroke-width="1"/>
+        <g data-part="g-file" transform="translate(34, 117)"/>
+        <text class="sub" x="72" y="136">api.jar · 88 MB</text>
+      </g>
+      <g data-part="el-cube" data-accent="2" transform="translate(700, 400)"/>
+      <g transform="translate(700, 400)">
+        <text class="st" x="20" y="46">«execution environment»</text>
+        <text class="title" x="20" y="72">Worker pool</text>
+        <text class="sub" x="20" y="94">autoscaled 2–12</text>
+        <rect class="art" x="20" y="108" width="200" height="44" rx="10" stroke-width="1"/>
+        <g data-part="g-file" data-accent="2" transform="translate(34, 117)"/>
+        <text class="sub" x="72" y="136">jobs.jar · 61 MB</text>
+      </g>
+
+      <g data-part="el-database" data-accent="2" transform="translate(1050, 180)"/>
+      <text class="st" x="1110" y="352" text-anchor="middle">«device»</text>
+      <text class="title" x="1110" y="376" text-anchor="middle">RDS · postgres 16</text>
+
+      <g data-part="el-cloud" data-accent="3" transform="translate(1030, 430)"/>
+      <text class="st" x="1120" y="566" text-anchor="middle">«external»</text>
+      <text class="title" x="1120" y="590" text-anchor="middle">Third-party APIs</text>
+
+      <!-- links: the label is the protocol -->
+      <path class="s1" d="M224 290 H 326" stroke-width="1.8" marker-end="url(#m1)"/>
+      <text class="lbl f1" x="275" y="274" text-anchor="middle">«https»</text>
+
+      <path class="s1" d="M594 290 H 696" stroke-width="1.8" marker-end="url(#m1)"/>
+      <text class="lbl f1" x="645" y="274" text-anchor="middle">«grpc»</text>
+
+      <path class="s2" d="M964 250 H 1046" stroke-width="1.8" marker-end="url(#m2)"/>
+      <text class="lbl f2" x="1005" y="234" text-anchor="middle">«5432/tcp»</text>
+
+      <path class="s2" d="M820 324 V 396" stroke-width="1.8" marker-end="url(#m2)"/>
+      <text class="lbl f2" x="834" y="374">«amqp» jobs</text>
+
+      <path class="s3" d="M964 500 H 1056" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#m3)"/>
+      <text class="lbl f3" x="1010" y="484" text-anchor="middle">«https»</text>
+
+      <text class="sub" x="70" y="700" opacity="0.75">One node, one machine boundary: if two boxes can fail separately, they are two nodes. The chip inside each is what the release actually copies there.</text>
+    </svg>
+  </body>
+</html>

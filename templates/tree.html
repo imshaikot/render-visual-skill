@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal | blueprint | frost | neon | sepia. If you copied this
+         file out of the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 17px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part referenced with data-part relies on these */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      .name { font: 500 13px var(--font-mono); fill: var(--ink); }
+      /* one selected row, in both views, so the eye ties them together */
+      .sel { fill: oklch(var(--a1-raw) / 12%); stroke: var(--a1); }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══ TREE — one hierarchy, drawn the two ways people read hierarchies ══
+         Left, the indented view (a file explorer, a nav, an outline):
+           panel x=70 y=100 w=690 h=500 · rows every 38px from baseline y=190
+           depth d puts the glyph at x = 98 + 36d and the label at glyph + 38
+           the guide for a parent sits at glyphX + 14 and stops at its last child
+         Right, the same tree as node-link (an org chart, a decision tree):
+           root 170×54 at (970,170) · children 132×52 at y=292 · leaves 120×42 at y=396
+         Keep ONE row selected (.sel) and select it in both views — that pairing
+         is the whole argument for showing two idioms at once. Delete the half
+         you do not need; each stands alone. -->
+    <svg width="1360" height="740" viewBox="0 0 1360 740" fill="none">
+
+      <text class="kicker" x="70" y="58">RENDER-VISUAL · WHAT LIVES WHERE IN THE SKILL</text>
+
+      <!-- ─────────────── indented view ─────────────── -->
+      <rect class="node" x="70" y="100" width="690" height="500" rx="16" stroke-width="1"/>
+      <text class="sec" x="98" y="136">SKILLS/RENDER-VISUAL — 3 LEVELS SHOWN</text>
+      <path class="sline" d="M71 154 H759" stroke-width="1"/>
+
+      <!-- guides: parent → its last child. Ticks meet each child's glyph. -->
+      <g class="sline" stroke-width="1.2" opacity="0.9">
+        <path d="M112 206 V 564"/>
+        <path d="M112 222 H 130 M112 374 H 130 M112 412 H 130 M112 526 H 130 M112 564 H 130"/>
+        <path d="M148 244 V 336"/>
+        <path d="M148 260 H 166 M148 298 H 166 M148 336 H 166"/>
+        <path d="M148 434 V 488"/>
+        <path d="M148 450 H 166 M148 488 H 166"/>
+      </g>
+
+      <!-- the selected row: wash + hairline, exactly as a real tree view marks one -->
+      <rect class="sel" x="86" y="282" width="658" height="34" rx="8" stroke-width="1"/>
+
+      <!-- rows. Folders carry the accent; files sit back at 0.5 so the shape of
+           the tree reads before its contents do. -->
+      <g data-part="g-folder" transform="translate(98, 170)"/>
+      <text class="name" x="136" y="190">render-visual/</text>
+      <text class="sub" x="736" y="190" text-anchor="end" opacity="0.7">6 dirs</text>
+
+      <g data-part="g-folder" transform="translate(134, 208)"/>
+      <text class="name" x="172" y="228">scripts/</text>
+      <text class="sub" x="736" y="228" text-anchor="end" opacity="0.7">10 files</text>
+
+      <g data-part="g-file" opacity="0.5" transform="translate(170, 246)"/>
+      <text class="name" x="208" y="266" opacity="0.75">render.mjs</text>
+
+      <g data-part="g-file" transform="translate(170, 284)"/>
+      <text class="name f1" x="208" y="304">chrome.mjs</text>
+      <text class="sub f1" x="736" y="304" text-anchor="end">profiles · guards</text>
+
+      <g data-part="g-file" opacity="0.5" transform="translate(170, 322)"/>
+      <text class="name" x="208" y="342" opacity="0.75">selftest.mjs</text>
+
+      <g data-part="g-folder" transform="translate(134, 360)"/>
+      <text class="name" x="172" y="380">parts/</text>
+      <text class="sub" x="736" y="380" text-anchor="end" opacity="0.7">57 svg</text>
+
+      <g data-part="g-folder" transform="translate(134, 398)"/>
+      <text class="name" x="172" y="418">templates/</text>
+      <text class="sub" x="736" y="418" text-anchor="end" opacity="0.7">13 html</text>
+
+      <g data-part="g-file" opacity="0.5" transform="translate(170, 436)"/>
+      <text class="name" x="208" y="456" opacity="0.75">diagram.html</text>
+
+      <g data-part="g-file" opacity="0.5" transform="translate(170, 474)"/>
+      <text class="name" x="208" y="494" opacity="0.75">swimlane.html</text>
+
+      <g data-part="g-folder" transform="translate(134, 512)"/>
+      <text class="name" x="172" y="532">themes/</text>
+      <text class="sub" x="736" y="532" text-anchor="end" opacity="0.7">8 css</text>
+
+      <g data-part="g-file" opacity="0.5" transform="translate(134, 550)"/>
+      <text class="name" x="172" y="570" opacity="0.75">SKILL.md</text>
+
+      <!-- ─────────────── node-link view ─────────────── -->
+      <text class="sec" x="802" y="136">THE SAME TREE, NODE-LINK</text>
+
+      <rect class="node" x="970" y="170" width="170" height="54" rx="14" stroke-width="1"/>
+      <text class="title" x="1055" y="204" text-anchor="middle">render-visual</text>
+
+      <g class="sline" stroke-width="1.2">
+        <path d="M1055 224 V 262"/>
+        <path d="M900 262 H 1210"/>
+        <path d="M900 262 V 292 M1055 262 V 292 M1210 262 V 292"/>
+        <path d="M900 344 V 372"/>
+        <path d="M862 372 H 998"/>
+        <path d="M862 372 V 396 M998 372 V 396"/>
+      </g>
+
+      <rect class="node" x="834" y="292" width="132" height="52" rx="12" stroke-width="1"/>
+      <text class="name" x="900" y="323" text-anchor="middle">scripts/</text>
+      <rect class="node" x="989" y="292" width="132" height="52" rx="12" stroke-width="1"/>
+      <text class="name" x="1055" y="323" text-anchor="middle">parts/</text>
+      <rect class="node" x="1144" y="292" width="132" height="52" rx="12" stroke-width="1"/>
+      <text class="name" x="1210" y="323" text-anchor="middle">templates/</text>
+
+      <rect class="node" x="802" y="396" width="120" height="42" rx="10" stroke-width="1"/>
+      <text class="name" x="862" y="422" text-anchor="middle" opacity="0.75">render.mjs</text>
+      <rect class="sel" x="938" y="396" width="120" height="42" rx="10" stroke-width="1"/>
+      <text class="name f1" x="998" y="422" text-anchor="middle">chrome.mjs</text>
+
+      <text class="sub" x="802" y="500">Indented scales with depth — a tenth level costs</text>
+      <text class="sub" x="802" y="522">36px, not a redraw. Node-link scales with breadth,</text>
+      <text class="sub" x="802" y="544">and shows siblings as siblings. Pick per question.</text>
+
+      <text class="sub" x="70" y="700" opacity="0.75">A tree earns its place when the reader's question is "what is inside what". If the question is "what talks to what", that is a diagram, not a tree.</text>
+    </svg>
+  </body>
+</html>

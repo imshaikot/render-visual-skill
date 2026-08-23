@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- THEME: swap ember for slate | paper | terminal | blueprint | frost | neon | sepia. If you copied this
+         file out of the skill, copy the theme file beside it and use href="./ember.css". -->
+    <link rel="stylesheet" href="../themes/ember.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1360px; height: 740px; overflow: hidden;
+        background: var(--ground);
+        position: relative;
+        font-family: var(--font-display);
+      }
+      .glow { position: absolute; border-radius: 999px; filter: blur(120px); opacity: var(--glow-opacity); }
+      .g1 { width: 560px; height: 560px; top: -240px; left: -100px; background: var(--glow1); }
+      .g2 { width: 520px; height: 520px; top: -200px; right: -120px; background: var(--glow2); }
+      .dots {
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 45%, #000 40%, transparent 100%);
+      }
+      svg { position: relative; display: block; }
+      .title { font: 600 17px var(--font-display); fill: var(--ink); }
+      .sub { font: 400 12.5px var(--font-mono); fill: var(--ink-dim); }
+      .lbl { font: 500 12.5px var(--font-mono); }
+      .kicker { font: 500 14px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.04em; }
+      .sec { font: 500 12px var(--font-mono); fill: var(--ink-faint); letter-spacing: 0.08em; }
+      .node { fill: var(--surface); stroke: var(--line); }
+      .s1 { stroke: var(--a1); } .s2 { stroke: var(--a2); } .s3 { stroke: var(--a3); } .s4 { stroke: var(--a4); }
+      .f1 { fill: var(--a1); } .f2 { fill: var(--a2); } .f3 { fill: var(--a3); } .f4 { fill: var(--a4); }
+      /* element utilities — every part referenced with data-part relies on these */
+      .sline { stroke: var(--line); } .fline { fill: var(--line); }
+      .sfaint { stroke: var(--ink-faint); } .ffaint { fill: var(--ink-faint); }
+      .fground { fill: var(--ground); }
+      .glyph { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      /* the boundary is a zone, not a node: a wash and a dashed edge, so the
+         cards inside it stay the brightest things on the page */
+      .zone { fill: oklch(var(--ink-raw) / 4%); stroke: var(--line); stroke-dasharray: 10 7; }
+      .pod { fill: oklch(var(--ink-raw) / 4%); stroke: var(--line); }
+    </style>
+  </head>
+  <body>
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="dots"></div>
+
+    <!-- ══ CLUSTER — what is inside the boundary, and what survives a rebuild ══
+         Grid:
+           boundary  x=300 y=100 w=990 h=540
+           three columns inside it at x=324 / 650 / 976, each 290 wide
+           control-plane cards y=156 h=92 · worker cards y=304 h=280
+           pods 250×56 at (col+20, 400) and (col+20, 464)
+         Anything drawn OUTSIDE the boundary outlives the cluster — that is the
+         claim this figure makes, so put nothing there casually. Traffic in is
+         a1, state is a2. The utilisation bars are schematic, like every part in
+         this library: if the numbers matter, plot them. -->
+    <svg width="1360" height="740" viewBox="0 0 1360 740" fill="none">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f1" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f2" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+        <marker id="m3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="f3" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+      </defs>
+
+      <text class="kicker" x="70" y="58">PLATFORM · WHAT RUNS WHERE, AND WHAT SURVIVES A REBUILD</text>
+
+      <rect class="zone" x="300" y="100" width="990" height="540" rx="20" stroke-width="1.2"/>
+      <text class="sec" x="324" y="134">PRODUCTION CLUSTER · EU-WEST-1 · 3 NODES</text>
+
+      <!-- outside the boundary, above: where the traffic comes from -->
+      <g data-part="el-cloud" transform="translate(75, 150)"/>
+      <text class="title" x="165" y="286" text-anchor="middle">Public traffic</text>
+      <text class="sub" x="165" y="308" text-anchor="middle">cdn · 12k rps</text>
+      <path class="s1" d="M258 202 H 320" stroke-width="1.8" marker-end="url(#m1)"/>
+
+      <!-- outside the boundary, below: the state that outlives every node -->
+      <g data-part="el-database" data-accent="2" transform="translate(105, 430)"/>
+      <text class="title" x="165" y="600" text-anchor="middle">Managed Postgres</text>
+      <text class="sub" x="165" y="622" text-anchor="middle">not in the cluster</text>
+
+      <!-- control plane row: cards at (col, 156), glyph at (+18,+32) -->
+      <g transform="translate(324, 156)">
+        <rect class="node" width="290" height="92" rx="14" stroke-width="1"/>
+        <g data-part="g-net" transform="translate(18, 32)"/>
+        <text class="title" x="58" y="40">Ingress</text>
+        <text class="sub" x="58" y="64">nginx · TLS terminate</text>
+      </g>
+      <g transform="translate(650, 156)">
+        <rect class="node" width="290" height="92" rx="14" stroke-width="1"/>
+        <g data-part="g-api" transform="translate(18, 32)"/>
+        <text class="title" x="58" y="40">api-server</text>
+        <text class="sub" x="58" y="64">control plane · RBAC</text>
+      </g>
+      <g transform="translate(976, 156)">
+        <rect class="node" width="290" height="92" rx="14" stroke-width="1"/>
+        <g data-part="g-db" transform="translate(18, 32)"/>
+        <text class="title" x="58" y="40">etcd</text>
+        <text class="sub" x="58" y="64">raft · 3 members</text>
+      </g>
+
+      <!-- ingress fans out to every node: one bus, three drops -->
+      <g class="s1" stroke-width="1.8">
+        <path d="M469 248 V 274 H 1121"/>
+        <path d="M469 274 V 300" marker-end="url(#m1)"/>
+        <path d="M795 274 V 300" marker-end="url(#m1)"/>
+        <path d="M1121 274 V 300" marker-end="url(#m1)"/>
+      </g>
+
+      <!-- worker nodes. Each card: header, rule, two pods, a utilisation bar. -->
+      <g transform="translate(324, 304)">
+        <rect class="node" width="290" height="280" rx="14" stroke-width="1"/>
+        <g data-part="g-chip" transform="translate(18, 22)"/>
+        <text class="title" x="58" y="38">node-1</text>
+        <text class="sub" x="58" y="60">m6i.large · 4 vCPU</text>
+        <path class="sline" d="M1 80 H289" stroke-width="1"/>
+        <rect class="pod" x="20" y="96" width="250" height="56" rx="10" stroke-width="1"/>
+        <g data-part="g-globe" transform="translate(34, 110)"/>
+        <text class="sub" x="72" y="129">web</text>
+        <text class="sub" x="250" y="129" text-anchor="end" opacity="0.7">×3</text>
+        <rect class="pod" x="20" y="160" width="250" height="56" rx="10" stroke-width="1"/>
+        <g data-part="g-api" transform="translate(34, 174)"/>
+        <text class="sub" x="72" y="193">api</text>
+        <text class="sub" x="250" y="193" text-anchor="end" opacity="0.7">×2</text>
+        <text class="sub" x="20" y="238" opacity="0.7">cpu requested</text>
+        <text class="sub" x="270" y="238" text-anchor="end" opacity="0.7">62%</text>
+        <rect class="fline" x="20" y="248" width="250" height="6" rx="3"/>
+        <rect class="f1" x="20" y="248" width="155" height="6" rx="3"/>
+      </g>
+      <g transform="translate(650, 304)">
+        <rect class="node" width="290" height="280" rx="14" stroke-width="1"/>
+        <g data-part="g-chip" transform="translate(18, 22)"/>
+        <text class="title" x="58" y="38">node-2</text>
+        <text class="sub" x="58" y="60">m6i.large · 4 vCPU</text>
+        <path class="sline" d="M1 80 H289" stroke-width="1"/>
+        <rect class="pod" x="20" y="96" width="250" height="56" rx="10" stroke-width="1"/>
+        <g data-part="g-gear" transform="translate(34, 110)"/>
+        <text class="sub" x="72" y="129">worker</text>
+        <text class="sub" x="250" y="129" text-anchor="end" opacity="0.7">×4</text>
+        <rect class="pod" x="20" y="160" width="250" height="56" rx="10" stroke-width="1"/>
+        <g data-part="g-layers" transform="translate(34, 174)"/>
+        <text class="sub" x="72" y="193">cache</text>
+        <text class="sub" x="250" y="193" text-anchor="end" opacity="0.7">×2</text>
+        <text class="sub" x="20" y="238" opacity="0.7">cpu requested</text>
+        <text class="sub" x="270" y="238" text-anchor="end" opacity="0.7">76%</text>
+        <rect class="fline" x="20" y="248" width="250" height="6" rx="3"/>
+        <rect class="f1" x="20" y="248" width="190" height="6" rx="3"/>
+      </g>
+      <g transform="translate(976, 304)">
+        <rect class="node" width="290" height="280" rx="14" stroke-width="1"/>
+        <g data-part="g-chip" transform="translate(18, 22)"/>
+        <text class="title" x="58" y="38">node-3</text>
+        <text class="sub" x="58" y="60">m6i.large · 4 vCPU</text>
+        <path class="sline" d="M1 80 H289" stroke-width="1"/>
+        <rect class="pod" x="20" y="96" width="250" height="56" rx="10" stroke-width="1"/>
+        <g data-part="g-search" transform="translate(34, 110)"/>
+        <text class="sub" x="72" y="129">search</text>
+        <text class="sub" x="250" y="129" text-anchor="end" opacity="0.7">×2</text>
+        <rect class="pod" x="20" y="160" width="250" height="56" rx="10" stroke-width="1"/>
+        <g data-part="g-clock" transform="translate(34, 174)"/>
+        <text class="sub" x="72" y="193">cron</text>
+        <text class="sub" x="250" y="193" text-anchor="end" opacity="0.7">×1</text>
+        <text class="sub" x="20" y="238" opacity="0.7">cpu requested</text>
+        <text class="sub" x="270" y="238" text-anchor="end" opacity="0.7">41%</text>
+        <rect class="fline" x="20" y="248" width="250" height="6" rx="3"/>
+        <rect class="f1" x="20" y="248" width="103" height="6" rx="3"/>
+      </g>
+
+      <!-- every node talks to the same store: one rail, one exit -->
+      <g class="s2" stroke-width="1.6">
+        <path d="M469 588 V 604 M795 588 V 604 M1121 588 V 604" stroke-dasharray="6 5"/>
+        <path d="M1121 604 H 268 V 502 H 232" stroke-dasharray="6 5" marker-end="url(#m2)"/>
+      </g>
+      <text class="lbl f2" x="700" y="626" text-anchor="middle">reads · writes · one pool</text>
+
+      <text class="sub" x="70" y="700" opacity="0.75">Pods are placed, not pinned: the picture holds after a rebuild only for what sits outside the dashed line. Replica counts and utilisation here are schematic.</text>
+    </svg>
+  </body>
+</html>
