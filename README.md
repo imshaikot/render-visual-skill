@@ -165,6 +165,18 @@ node $S/scripts/animate.mjs $S/templates/sequence.html sequence.gif --theme embe
 The canvas size comes from the template's `<body>`; `--scale` defaults to 2 (retina).
 `--theme` inlines the theme, so no `themes/` directory has to sit beside your figure.
 
+When a request names no theme, the agent asks rather than guesses — and remembers the
+answer. Standing choices (theme, where finished images land, scale) live in a
+`.render-visual.json` at your project root, written only with your consent, so the next
+render doesn't re-open settled questions:
+
+```json
+{ "theme": "slate", "output": "docs/figures/", "scale": 2 }
+```
+
+Anything said in the prompt beats the file; delete it to change course. The renderer
+itself never reads it — `--theme` stays explicit on every command.
+
 ## Themes
 
 Every template consumes tokens only, so one source file renders in any theme.
