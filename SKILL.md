@@ -68,6 +68,34 @@ Nothing here needs the working directory to be the skill. Outputs go wherever yo
 
 ## 1. Workflow
 
+0. **Settle theme and template before touching a file.** Two choices shape everything
+   after, and neither is yours to default silently:
+
+   - **Theme.** A theme named in the request wins. Otherwise use the one recorded in
+     `.render-visual.json` (below). Failing both, ask — offer the theme table above by
+     mood and let the user pick. Never choose silently: the wrong palette is a re-render
+     at best and an off-brand deliverable at worst.
+   - **Template.** Read the task against the template table's "For" column and shortlist
+     what fits. A request that names one — "a swimlane", "an og card" — is the answer.
+     One clear match: take it and say which in the handoff. Several plausible: ask,
+     naming the shortlist and what each would emphasise.
+
+   Where nobody can answer — CI, a scripted run — fall back in the same order: the file,
+   then the closest match, stated plainly in the output.
+
+   **Remember the answers.** A project that has decided once should not be asked twice.
+   Standing choices live in `.render-visual.json` at the project root — theme, where
+   finished images land, scale, anything settled that would otherwise be re-asked:
+
+   ```json
+   { "theme": "slate", "output": "docs/figures/", "scale": 2 }
+   ```
+
+   Read it before asking anything; after a first round of answers, offer to write it —
+   ask before creating it, it lives in the user's project. The prompt always beats the
+   file. The renderer itself never reads it: pass `--theme` explicitly on every command,
+   so a typo still fails loud instead of falling back to a wrong palette.
+
 1. **Copy the nearest template** into the working directory (never edit the templates in
    place — they are the exemplars):
 
