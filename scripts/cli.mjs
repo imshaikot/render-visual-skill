@@ -76,6 +76,21 @@ export function findThemeLink(html, names = listThemes()) {
   return null
 }
 
+/* ── Output formats ─────────────────────────────────────────────────────── */
+
+// PNG is the master format and the only one this repo can decode, so the other
+// two are never written alone: a PDF is printed in the same Chrome launch as a
+// proof shot, and a JPEG is transcoded from a master that already passed the
+// content guard. No format reaches disk without its pixels having been looked
+// at once — see assertPdf and assertJpeg in chrome.mjs.
+const FORMAT_ALIASES = { png: 'png', jpg: 'jpeg', jpeg: 'jpeg', pdf: 'pdf' }
+
+/** The formats the renderer writes, sorted, for error messages. */
+export const FORMATS = ['jpeg', 'pdf', 'png']
+
+/** Lowercased extension of a path without its dot; '' when there is none. */
+export const extensionOf = (p) => (String(p).match(/\.([A-Za-z0-9]+)$/)?.[1] ?? '').toLowerCase()
+
 /* ── Argument parsing ───────────────────────────────────────────────────── */
 
 export const distance = (a, b) => {
@@ -173,7 +188,43 @@ export function parseArgs(spec, argv = process.argv.slice(2)) {
     }
   }
 
-  return { argv, positional, opt, flag, num, scale, size, theme }
+  /**
+   * The output format: `--format` when given, otherwise the output file's own
+   * extension. Disagreement between the two is fatal rather than resolved —
+   * `out.png --format pdf` means one of them is a mistake, and both ways of
+   * guessing write a file whose name lies about its contents.
+   */
+  const format = (output, name = 'format') => {
+    const v = opt(name)
+    const ext = extensionOf(output)
+    const fromExt = FORMAT_ALIASES[ext]
+    if (v === undefined) {
+      if (fromExt) return fromExt
+      fail(
+        `Cannot tell what format to write "${output}" in.\n` +
+          `  Name it .png, .jpg or .pdf, or pass --format ${FORMATS.join('|')}.`,
+        spec.usage,
+      )
+    }
+    const asked = FORMAT_ALIASES[String(v).trim().toLowerCase()]
+    if (!asked) {
+      const near = Object.keys(FORMAT_ALIASES)
+        .map((k) => [k, distance(String(v).trim().toLowerCase(), k)])
+        .sort((a, b) => a[1] - b[1])[0]
+      const hint = near && near[1] <= 2 ? ` Did you mean --format ${near[0]}?` : ''
+      fail(`Unknown format "${v}". Available: ${FORMATS.join(', ')}.${hint}`, spec.usage)
+    }
+    if (fromExt && fromExt !== asked) {
+      fail(
+        `--format ${asked} disagrees with the output name "${output}" — .${ext} is ${fromExt}.\n` +
+          '  Refusing to guess: a file whose extension lies about its contents is worse than either answer.',
+        spec.usage,
+      )
+    }
+    return asked
+  }
+
+  return { argv, positional, opt, flag, format, num, scale, size, theme }
 }
 
 export function fail(message, usage) {
