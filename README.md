@@ -4,18 +4,37 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Agent Skill](https://img.shields.io/badge/Agent-Skill-8A63D2.svg)](https://agentskills.io)
 
-An [Agent Skill](https://agentskills.io) that turns a coding agent into a competent visual
-designer for **diagrams, presentation slides, social cards, code snippets and device
-mockups** — authored as HTML/SVG, rendered to crisp PNGs by the headless Chromium you already
-have. No design tool, no API, no npm dependencies.
+**Your coding agent cannot draw.** This [Agent Skill](https://agentskills.io) fixes that —
+diagrams, presentation slides, social cards, code snippets and device mockups, authored as
+HTML/SVG and rendered to crisp PNGs by the headless Chromium you already have. No design tool,
+no API, no npm dependencies.
 
-Works in any skills-compatible agent: Claude Code, Cursor, GitHub Copilot / VS Code, Codex,
-Gemini CLI, OpenCode, Amp, Goose and others.
+| | | |
+| --- | --- | --- |
+| ![diagram, ember theme](previews/diagram-ember.png) | ![slide, slate theme](previews/slide-slate.png) | ![card, paper theme](previews/card-paper.png) |
+| diagram · `ember` | slide · `slate` | card · `paper` |
+
+Sequence diagrams animate — each step tweened over several frames, assembled into a looping
+GIF **in pure Node**. Chrome renders the frames in parallel, the built-in zlib decodes them,
+and a hand-rolled GIF89a/LZW encoder with changed-region deltas does the rest:
+
+![animated sequence diagram](previews/sequence-ember.gif)
+
+```sh
+claude plugin marketplace add imshaikot/render-visual-skill
+claude plugin install render-visual-skill@render-visual-skill
+```
+
+Works in any skills-compatible agent — Claude Code, Cursor, GitHub Copilot / VS Code, Codex,
+Gemini CLI, OpenCode, Amp and Goose. [Install](#install) covers the clone-a-branch lane that
+every agent other than Claude Code uses.
+
+Every image in this README was rendered by the skill.
 
 ## Contents
 
-- [Capabilities](#capabilities)
 - [Gallery](#gallery)
+- [Capabilities](#capabilities)
 - [Requirements](#requirements)
 - [Install](#install)
 - [Usage](#usage)
@@ -26,6 +45,26 @@ Gemini CLI, OpenCode, Amp, Goose and others.
 - [Why HTML instead of a design tool](#why-html-instead-of-a-design-tool)
 - [Uninstall](#uninstall)
 - [License](#license)
+
+## Gallery
+
+Five more diagram idioms ship as templates, each 1360×740 and assembled from the same parts:
+
+| | | |
+| --- | --- | --- |
+| ![swimlane, ember theme](previews/swimlane-ember.png) | ![cluster diagram, slate theme](previews/cluster-slate.png) | ![deployment diagram, blueprint theme](previews/deployment-blueprint.png) |
+| swimlane · `ember` | cluster · `slate` | deployment · `blueprint` |
+| ![tree view, paper theme](previews/tree-paper.png) | ![mind map, neon theme](previews/mindmap-neon.png) | |
+| tree · `paper` | mind map · `neon` | |
+
+Same markup, different theme:
+
+![diagram, terminal theme](previews/diagram-terminal.png)
+
+Code snippets get a Carbon-style window — hand-highlighted with a fixed token→accent mapping,
+line numbers, a highlight line and diff rows, in any of the eight themes:
+
+![code snippet, ember theme](previews/code-ember.png)
 
 ## Capabilities
 
@@ -50,37 +89,6 @@ Gemini CLI, OpenCode, Amp, Goose and others.
 | **Transparent output** | A real alpha channel via `--transparent`, so a figure drops onto any background |
 | **Parallel-safe** | Each render claims its own Chrome profile by pid lockfile, and reaps orphans an interrupted run left behind |
 | **Fails loudly** | A wrong image at exit 0 is the one thing refused outright — blank canvases, missing stylesheets, unreadable images and unknown parts all fail, never render quietly wrong |
-
-## Gallery
-
-| | | |
-| --- | --- | --- |
-| ![diagram, ember theme](previews/diagram-ember.png) | ![slide, slate theme](previews/slide-slate.png) | ![card, paper theme](previews/card-paper.png) |
-| diagram · `ember` | slide · `slate` | card · `paper` |
-
-Five more diagram idioms ship as templates, each 1360×740 and assembled from the same parts:
-
-| | | |
-| --- | --- | --- |
-| ![swimlane, ember theme](previews/swimlane-ember.png) | ![cluster diagram, slate theme](previews/cluster-slate.png) | ![deployment diagram, blueprint theme](previews/deployment-blueprint.png) |
-| swimlane · `ember` | cluster · `slate` | deployment · `blueprint` |
-| ![tree view, paper theme](previews/tree-paper.png) | ![mind map, neon theme](previews/mindmap-neon.png) | |
-| tree · `paper` | mind map · `neon` | |
-
-Same markup, different theme:
-
-![diagram, terminal theme](previews/diagram-terminal.png)
-
-Sequence diagrams animate — each step tweened over several frames, assembled into a looping
-GIF **in pure Node**. Chrome renders the frames in parallel, the built-in zlib decodes them,
-and a hand-rolled GIF89a/LZW encoder with changed-region deltas does the rest:
-
-![animated sequence diagram](previews/sequence-ember.gif)
-
-Code snippets get a Carbon-style window — hand-highlighted with a fixed token→accent mapping,
-line numbers, a highlight line and diff rows, in any of the eight themes:
-
-![code snippet, ember theme](previews/code-ember.png)
 
 ## Requirements
 
