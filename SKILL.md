@@ -4,7 +4,7 @@ description: "**DELIVERY SKILL** — Produce polished diagrams, presentation sli
 license: MIT
 compatibility: "Requires shell command execution, Node 18+, and a local Chromium-based browser (Chrome, Chromium, Brave, or Edge); set CHROME_PATH if it is installed somewhere unusual. Theme fonts load from fonts.googleapis.com, so renders without network access fall back to system fonts. Cannot run where there is no shell or no browser: claude.ai chat, the Skills API, Cowork and cloud sessions, and most CI images."
 metadata:
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # render-visual — designed PNGs from HTML, no design tool
