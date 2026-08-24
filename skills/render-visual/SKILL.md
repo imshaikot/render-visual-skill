@@ -1,6 +1,6 @@
 ---
 name: render-visual
-description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs by authoring HTML/SVG and rendering it with a local headless Chromium. Eight built-in themes (ember, slate, paper, terminal, blueprint, frost, neon, sepia), swappable with a flag. Also frames your own screenshots and photos — in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, banners, device mockups, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, swimlane, tree view, cluster, deployment, mind map, slide, slide deck, presentation, og card, social card, banner, cover image, blog figure, screenshot in a browser frame, device mockup, render a png, make an image, visual."
+description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs, JPEGs or PDFs by authoring HTML/SVG and rendering it with a local headless Chromium. Eight built-in themes (ember, slate, paper, terminal, blueprint, frost, neon, sepia), swappable with a flag. Also frames your own screenshots and photos in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, swimlane, tree view, cluster, deployment, mind map, slide, slide deck, presentation, og card, social card, banner, blog figure, screenshot in a browser frame, device mockup, render a png, export a pdf or jpeg, make an image, visual."
 license: MIT
 compatibility: "Requires shell command execution, Node 18+, and a local Chromium-based browser (Chrome, Chromium, Brave, or Edge); set CHROME_PATH if it is installed somewhere unusual. Theme fonts load from fonts.googleapis.com, so renders without network access fall back to system fonts. Cannot run where there is no shell or no browser: claude.ai chat, the Skills API, Cowork and cloud sessions, and most CI images."
 metadata:
@@ -68,8 +68,8 @@ Nothing here needs the working directory to be the skill. Outputs go wherever yo
 
 ## 1. Workflow
 
-0. **Settle theme and template before touching a file.** Two choices shape everything
-   after, and neither is yours to default silently:
+0. **Settle theme, template and format before touching a file.** Three choices shape
+   everything after, and none of them is yours to default silently:
 
    - **Theme.** A theme named in the request wins. Otherwise use the one recorded in
      `.render-visual.json` (below). Failing both, ask — offer the theme table above by
@@ -80,15 +80,25 @@ Nothing here needs the working directory to be the skill. Outputs go wherever yo
      One clear match: take it and say which in the handoff. Several plausible: ask,
      naming the shortlist and what each would emphasise.
 
+   - **Format.** PNG, JPEG or PDF. A request that names one — "as a PDF", "make it a
+     jpg" — is the answer, and so is an output path that already ends in `.pdf` or
+     `.jpg`. Otherwise use the format recorded in `.render-visual.json`. Failing both,
+     ask, naming what each is for: **PNG** for anything going into a README, a web page
+     or a social card, and the only one that can carry transparency; **JPEG** for a
+     photo-heavy figure or an attachment where weight is the constraint, at a third to a
+     half the bytes; **PDF** for print, for a figure that will be zoomed, or for a deck
+     that wants vector. The destination usually settles it — ask about the destination
+     rather than the file extension if that is easier to answer.
+
    Where nobody can answer — CI, a scripted run — fall back in the same order: the file,
-   then the closest match, stated plainly in the output.
+   then the closest match, then PNG, stated plainly in the output.
 
    **Remember the answers.** A project that has decided once should not be asked twice.
    Standing choices live in `.render-visual.json` at the project root — theme, where
    finished images land, scale, anything settled that would otherwise be re-asked:
 
    ```json
-   { "theme": "slate", "output": "docs/figures/", "scale": 2 }
+   { "theme": "slate", "format": "png", "output": "docs/figures/", "scale": 2 }
    ```
 
    Read it before asking anything; after a first round of answers, offer to write it —
@@ -122,13 +132,26 @@ Nothing here needs the working directory to be the skill. Outputs go wherever yo
 `$SKILL/scripts/render.mjs` — plain Node, zero dependencies.
 
 ```
-node "$SKILL/scripts/render.mjs" <input.html> <output.png> [--size WxH] [--scale N] [--theme name]
+node "$SKILL/scripts/render.mjs" <input.html> <output.(png|jpg|pdf)> [--size WxH] [--scale N] [--theme name] [--format name] [--transparent]
 ```
 
 - **Size** is read from the `width: Npx; height: Mpx` on the input's `<body>` — keep that
   declaration intact. `--size` overrides.
 - **Scale** defaults to 2: a 1360×740 canvas becomes a 2720×1480 PNG, right for retina,
   Medium, and READMEs.
+- **`--format png|jpeg|pdf`** picks the output format. Leave it off and the output file's
+  own extension decides, so `card.jpg` and `poster.pdf` need no flag. The two never
+  disagree quietly: `out.png --format pdf` is fatal rather than resolved, because either
+  way of guessing writes a file whose name lies about its contents.
+  - **PNG** is the master and the default — lossless, the only one that can carry alpha.
+  - **JPEG** is transcoded from a master PNG that has already passed the content guard,
+    so it costs one extra Chrome pass and lands at roughly half the bytes. It has no
+    alpha channel, so `--transparent` is refused rather than silently blackened.
+  - **PDF** is printed in the same launch as a proof screenshot, at exactly the canvas
+    size: an injected `@page` rule pins the page box and the box is checked afterwards.
+    Without that rule Chrome quietly lays the figure out on US Letter and exits 0, which
+    is why the input needs a `<head>` to inject into. PDF is vector, so `--scale` is
+    refused — it is already resolution-independent at any zoom.
 - **`--theme`** inlines one of the skill's own themes into a temp copy of the page, so one
   source file renders in any theme and the figure needs no `themes/` directory beside it.
   An unknown name is fatal and lists what exists; a page with no theme stylesheet to
@@ -149,12 +172,16 @@ node "$SKILL/scripts/render.mjs" <input.html> <output.png> [--size WxH] [--scale
   is a theme token, so a broken `<link>` does not degrade the render — it empties it, into a
   blank white page that screenshots as a perfect success. Passing `--theme` sidesteps this
   entirely; without it, keep the page's own stylesheet resolvable.
-- **A contentless render is fatal too.** After the screenshot the PNG is decoded and
-  rejected if its luminance spread says nothing but background and furniture got painted —
-  the failure a resolved-but-empty stylesheet or content positioned outside the body box
-  produces, which Chrome otherwise reports as a perfect success. A truncated PNG and one
-  that came out the wrong size are rejected in the same pass. The file is left in place so
-  you can look at it.
+- **A contentless render is fatal too, in every format.** After the screenshot the PNG is
+  decoded and rejected if its luminance spread says nothing but background and furniture
+  got painted — the failure a resolved-but-empty stylesheet or content positioned outside
+  the body box produces, which Chrome otherwise reports as a perfect success. A truncated
+  PNG and one that came out the wrong size are rejected in the same pass. JPEG and PDF are
+  covered by the same guard rather than a weaker one, which is the reason for the shapes
+  above: a JPEG is only ever encoded from a master that passed, and a PDF is only ever
+  accepted beside a proof shot that passed. The rejected file is left in place so you can
+  look at it — including the proof or master, which stays in `$TMPDIR/render-visual/` until
+  the next render reaps it.
 - **Chrome discovery**: standard install paths on macOS, Linux, and Windows are probed,
   then `PATH`; `CHROME_PATH` overrides and is fatal if it does not resolve. Any Chromium
   works (Chrome, Chromium, Brave, Edge). On Ubuntu the snap-packaged Chromium gets a
@@ -484,7 +511,8 @@ Before delivering any image:
 - [ ] Every line crossing is bridged
 - [ ] One gradient phrase at most; accents used by meaning, not variety
 - [ ] Facts in the copy verified against the project (counts, versions, names)
-- [ ] Output at 2x unless the destination demands otherwise (GIFs: 1x)
+- [ ] Output at 2x unless the destination demands otherwise (GIFs: 1x; PDFs take no scale)
+- [ ] Format matches the destination, and was chosen rather than defaulted into
 - [ ] Animations: every step present in order, and the final frame holds long enough to read
-- [ ] Every output PNG opened and looked at — the renderer catches a blank or mis-sized
-      figure, but only you catch an ugly one
+- [ ] Every output opened and looked at — the renderer catches a blank or mis-sized
+      figure in any format, but only you catch an ugly one

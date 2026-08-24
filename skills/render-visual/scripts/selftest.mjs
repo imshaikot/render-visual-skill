@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { deflateSync } from 'node:zlib'
-import { assertPng, findChrome } from './chrome.mjs'
+import { assertJpeg, assertPdf, assertPng, findChrome } from './chrome.mjs'
 import { decodePng } from './gif.mjs'
 
 const SCRIPTS = dirname(fileURLToPath(import.meta.url))
@@ -426,6 +426,73 @@ await test('an impossible render fails fast instead of relaunching Chrome', asyn
   assert(/Output directory does not exist/.test(r.stderr), `unexpected message: ${r.stderr.trim()}`)
   assert(took < 3000, `took ${took}ms — Chrome was launched and waited on`)
   assert(isoChromes().length === 0, 'Chrome was launched for a render that could never succeed')
+})
+
+/* ── export formats ──────────────────────────────────────────────────────── */
+
+// fig.html is diagram.html, whose body declares the canvas every check below
+// measures against.
+const FIG = { w: 1360, h: 740 }
+
+await test('every export format writes what its name claims', async () => {
+  const png = render('fig.html', 'fmt.png', '--theme', 'slate', '--scale', '1')
+  const jpg = render('fig.html', 'fmt.jpg', '--theme', 'slate', '--scale', '1')
+  const pdf = render('fig.html', 'fmt.pdf', '--theme', 'slate')
+  for (const [name, r] of [['png', png], ['jpg', jpg], ['pdf', pdf]]) {
+    assert(r.status === 0, `${name} exit ${r.status}: ${r.stderr.trim()}`)
+  }
+  // Each guard is format-specific and each one reads the real header, so this
+  // fails if Chrome ever stops honouring the extension and writes a PNG called
+  // .jpg — the exact wrong-file-at-exit-0 case the extension check cannot see.
+  const shot = assertPng(join(work, 'fmt.png'), FIG)
+  const frame = assertJpeg(join(work, 'fmt.jpg'), FIG)
+  assertPdf(join(work, 'fmt.pdf'), FIG)
+  // The JPEG is a transcode of the master, so its frame must match pixel for
+  // pixel in size; a mismatch means the second pass resampled.
+  assert(frame.width === shot.width && frame.height === shot.height,
+    `jpeg ${frame.width}x${frame.height} does not match the master ${shot.width}x${shot.height}`)
+})
+
+await test('no format ships a blank canvas', async () => {
+  // The content guard is the one thing a new output format could quietly lose:
+  // Chrome writes a JPEG or a PDF straight from a blank page and reports success.
+  // blank.html is the fixture the PNG case already uses.
+  for (const [out, extra] of [['blank.jpg', ['--scale', '1']], ['blank.pdf', []]]) {
+    const r = render('blank.html', out, ...extra)
+    assert(r.status !== 0, `a blank canvas shipped as ${out}`)
+    assert(/no content/.test(r.stderr), `${out}: unexpected message: ${r.stderr.trim()}`)
+    assert(!existsSync(join(work, 'blank.jpg')), 'a JPEG was transcoded from a rejected master')
+  }
+})
+
+await test('a guard that names a file leaves that file behind', async () => {
+  // The proof and the master live in the work dir, which is deleted on the way
+  // out. "The file is left in place for inspection" has to stay true for them,
+  // or the message sends you to a path that no longer exists.
+  const r = render('blank.html', 'evidence.pdf')
+  assert(r.status !== 0, 'a blank canvas shipped as a PDF')
+  const named = r.stderr.match(/^(\S+\.png) rendered with no content/m)
+  assert(named, `the guard named no file: ${r.stderr.trim()}`)
+  assert(existsSync(named[1]), `${named[1]} was named in the message and then deleted`)
+})
+
+await test('a format that cannot be right is refused before Chrome starts', async () => {
+  for (const [args, pattern] of [
+    [['out.png', '--format', 'pdf'], /disagrees with the output name/],
+    [['out.jpg', '--format', 'png'], /disagrees with the output name/],
+    [['out.tiff'], /Cannot tell what format/],
+    [['out.png', '--format', 'jpge'], /Unknown format .*Did you mean/],
+    [['out.pdf', '--scale', '2'], /--scale has no meaning for a PDF/],
+    [['out.jpg', '--transparent'], /no alpha channel/],
+    [['out.pdf', '--transparent'], /always paints an opaque page/],
+  ]) {
+    const started = Date.now()
+    const r = render('fig.html', ...args, '--theme', 'ember')
+    assert(r.status !== 0, `${args.join(' ')} was accepted`)
+    assert(pattern.test(r.stderr), `${args.join(' ')}: unexpected message: ${r.stderr.trim()}`)
+    assert(Date.now() - started < 2000, `${args.join(' ')}: the check ran too late to have preceded Chrome`)
+    assert(!existsSync(join(work, args[0])), `${args.join(' ')} wrote ${args[0]} anyway`)
+  }
 })
 
 /* ── element includes ────────────────────────────────────────────────────── */

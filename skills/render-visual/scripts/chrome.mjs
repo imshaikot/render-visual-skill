@@ -372,18 +372,27 @@ export function sweepStaleCopies(dir) {
  * `transparent` makes Chrome paint the default background fully transparent,
  * so pages that leave their background unpainted come out with real alpha.
  */
-export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE, abort = null, transparent = false) {
+export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE, abort = null, transparent = false, opts = {}) {
   mkdirSync(profile, { recursive: true })
   const target = resolve(out)
+  // `opts.pdf` prints a PDF in the same launch that takes the screenshot. One
+  // launch rather than two is not the point — the point is that the PDF and the
+  // shot come from the same layout of the same page, so the shot is admissible
+  // evidence about the PDF's content. Chrome honours both flags together;
+  // two --screenshot flags it does not (the last one wins).
+  const pdfTarget = opts.pdf ? resolve(opts.pdf) : null
+  const targets = pdfTarget ? [target, pdfTarget] : [target]
   // Chrome given an unwritable --screenshot path does not fail — it starts,
   // writes nothing, and sits there until the 120s timeout. Checked here, before
   // launch, for the same reason the stylesheet is: the alternative is two
   // minutes of silence per attempt.
-  const outDir = dirname(target)
-  if (!existsSync(outDir)) {
-    throw new Error(`Output directory does not exist: ${outDir}\nCreate it first (mkdir -p) or write to a path that already exists.`)
+  for (const t of targets) {
+    const outDir = dirname(t)
+    if (!existsSync(outDir)) {
+      throw new Error(`Output directory does not exist: ${outDir}\nCreate it first (mkdir -p) or write to a path that already exists.`)
+    }
   }
-  rmSync(target, { force: true })
+  for (const t of targets) rmSync(t, { force: true })
 
   const child = spawn(
     chrome,
@@ -408,6 +417,9 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
       `--user-data-dir=${profile}`,
       '--virtual-time-budget=8000',
       ...(transparent ? ['--default-background-color=00000000'] : []),
+      // --no-pdf-header-footer drops the date/URL furniture Chrome prints by
+      // default, which would otherwise land inside the canvas @page pins.
+      ...(pdfTarget ? [`--print-to-pdf=${pdfTarget}`, '--no-pdf-header-footer'] : []),
       `--screenshot=${target}`,
       url,
     ],
@@ -438,17 +450,21 @@ export function shoot(chrome, url, out, w, h, scale, profile = UNCLAIMED_PROFILE
     const timer = setInterval(() => {
       // The file check runs first: Chrome may exit right after writing.
       // The extra 1200ms lets it finish flushing the file it just created.
-      if (existsSync(target) && statSync(target).size > 0) return finish(true, null, 1200)
+      if (targets.every((t) => existsSync(t) && statSync(t).size > 0)) return finish(true, null, 1200)
       if (abort?.aborted) return finish(false, new Error('aborted'), 0)
       if (exited && Date.now() - started > 3000) {
         // The one failure a different profile can fix, so the only one worth a
         // retry: Chrome refusing a slot another instance still holds.
+        const missing = targets.filter((t) => !existsSync(t) || statSync(t).size === 0)
         return finish(false, Object.assign(
-          new Error(`Chrome exited without writing ${target} — is another instance using profile ${profile}?`),
+          new Error(`Chrome exited without writing ${missing.join(' and ')} — is another instance using profile ${profile}?`),
           { retryable: true },
         ), 0)
       }
-      if (Date.now() - started > 120_000) return finish(false, new Error('Timed out after 120s with no screenshot written.'), 0)
+      if (Date.now() - started > 120_000) {
+        const missing = targets.filter((t) => !existsSync(t) || statSync(t).size === 0)
+        return finish(false, new Error(`Timed out after 120s with ${missing.join(' and ')} still unwritten.`), 0)
+      }
     }, 250)
   })
 }
@@ -568,7 +584,7 @@ const safeReaddir = (dir) => {
  * Aborts are never retried.
  */
 export async function shootResilient(chrome, url, out, w, h, scale, opts = {}) {
-  const { attempts = 3, abort = null, transparent = false, slot = { dir: null } } = opts
+  const { attempts = 3, abort = null, transparent = false, pdf = null, slot = { dir: null } } = opts
   let last
   for (let i = 0; i < attempts; i++) {
     if (abort?.aborted) throw new Error('aborted')
@@ -580,7 +596,7 @@ export async function shootResilient(chrome, url, out, w, h, scale, opts = {}) {
       }
     }
     try {
-      return await shoot(chrome, url, out, w, h, scale, slot.dir, abort, transparent)
+      return await shoot(chrome, url, out, w, h, scale, slot.dir, abort, transparent, { pdf })
     } catch (err) {
       // Anything else — a bad output path, a 120s hang — fails the same way on
       // every slot. Retrying it just launches Chrome again and multiplies the
@@ -688,5 +704,129 @@ export function assertPng(file, expect = null) {
   return info
 }
 
+/* ── The other two formats ──────────────────────────────────────────────── */
 
+/**
+ * Reject a JPEG that is corrupt or the wrong size.
+ *
+ * There is deliberately no content check here, and none is missing: a JPEG is
+ * only ever written by transcoding a master PNG that has already been through
+ * assertPng, so its pixels were inspected by a decoder this file owns. What is
+ * left is what the transcode itself can get wrong — a truncated write, or a
+ * frame that came out at a size the arguments did not ask for.
+ *
+ * A JPEG whose SOF marker cannot be found is *not* a failure — it warns and
+ * abstains, on the same reasoning as the PNG variant case above.
+ */
+export function assertJpeg(file, expect = null) {
+  const buf = readFileSync(file)
+  if (buf.length < 4 || buf[0] !== 0xff || buf[1] !== 0xd8) {
+    throw new Error(`${file} is not a JPEG (${buf.length} bytes). Chrome wrote something else, or nothing.`)
+  }
+  if (buf[buf.length - 2] !== 0xff || buf[buf.length - 1] !== 0xd9) {
+    throw new Error(
+      `${file} is a truncated JPEG — ${buf.length} bytes with no end-of-image marker. ` +
+        'The write was interrupted. The file is left in place for inspection.',
+    )
+  }
 
+  // Walk the marker chain to the frame header. Standalone markers carry no
+  // length; everything else does, which is what makes the chain walkable.
+  let i = 2
+  let dims = null
+  while (i < buf.length - 3) {
+    if (buf[i] !== 0xff) { i++; continue }
+    const marker = buf[i + 1]
+    if (marker === 0xff) { i++; continue }                          // fill byte
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) { i += 2; continue }
+    if (marker === 0xda) break                                      // pixels start; no frame header found
+    const len = buf.readUInt16BE(i + 2)
+    if (len < 2) break
+    // SOF0/1/2/… — every frame header except DHT (c4), JPG (c8) and DAC (cc).
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      if (i + 9 > buf.length) break
+      dims = { width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5) }
+      break
+    }
+    i += 2 + len
+  }
+
+  if (!dims) {
+    console.error(`note: ${file} carries no frame header this build can read — size not verified.`)
+    return { width: null, height: null }
+  }
+  if (expect && (dims.width !== expect.w || dims.height !== expect.h)) {
+    throw new Error(
+      `${file} is ${dims.width}x${dims.height}, expected ${expect.w}x${expect.h}. ` +
+        'The transcode did not preserve the master\'s pixel size.',
+    )
+  }
+  return dims
+}
+
+// CSS resolves at 96px to the inch and PDF at 72 points, so a canvas pinned by
+// `@page { size: Wpx Hpx }` lands at exactly three quarters of its pixel size.
+const PT_PER_PX = 0.75
+// Chrome rounds the media box to its own device units; the observed drift is
+// hundredths of a point, so a point and a half is slack with room to spare and
+// still an order of magnitude tighter than any real page-size mistake.
+const BOX_TOLERANCE_PT = 1.5
+
+/**
+ * Reject a PDF that is corrupt, paginated, or not the size that was asked for.
+ *
+ * The failure this exists for is specific and silent: `--print-to-pdf` with no
+ * `@page` rule ignores the canvas entirely and lays the figure out on US Letter,
+ * cropping or shrinking it to fit, then exits 0 like any other success. A
+ * one-page check plus a media box comparison catches that, and catches the
+ * @page injection silently failing to apply as well.
+ *
+ * Content is not checked here — it cannot be, without a PDF renderer. It does
+ * not need to be either: every PDF is printed in the same Chrome launch as a
+ * proof screenshot, and render.mjs puts that shot through assertPng before it
+ * accepts the PDF beside it.
+ */
+export function assertPdf(file, expect = null) {
+  const buf = readFileSync(file)
+  if (buf.subarray(0, 5).toString('latin1') !== '%PDF-') {
+    throw new Error(`${file} is not a PDF (${buf.length} bytes). Chrome wrote something else, or nothing.`)
+  }
+  // The trailer is the last thing written, so its absence is a partial write.
+  if (!/%%EOF\s*$/.test(buf.subarray(-2048).toString('latin1'))) {
+    throw new Error(
+      `${file} is a truncated PDF — ${buf.length} bytes with no %%EOF trailer. ` +
+        'The write was interrupted. The file is left in place for inspection.',
+    )
+  }
+
+  const text = buf.toString('latin1')
+  const counts = [...text.matchAll(/\/Count\s+(\d+)/g)].map((m) => Number(m[1]))
+  if (counts.length && Math.max(...counts) !== 1) {
+    throw new Error(
+      `${file} came out as ${Math.max(...counts)} pages, expected 1. ` +
+        'The canvas did not fit the page box, so the figure is split across sheets — ' +
+        'check the body\'s width/height declaration and --size.',
+    )
+  }
+
+  const box = text.match(/\/MediaBox\s*\[\s*([\d.+-]+)\s+([\d.+-]+)\s+([\d.+-]+)\s+([\d.+-]+)\s*\]/)
+  if (!box) {
+    // A Chrome build that writes its page tree into a compressed object stream
+    // is unusual, not wrong. Warn and abstain rather than reject a good PDF.
+    console.error(`note: ${file} keeps its page box somewhere this build cannot read — size not verified.`)
+    return { width: null, height: null, pages: counts.length ? Math.max(...counts) : null }
+  }
+  const width = Number(box[3]) - Number(box[1])
+  const height = Number(box[4]) - Number(box[2])
+  if (expect) {
+    const want = { width: expect.w * PT_PER_PX, height: expect.h * PT_PER_PX }
+    if (Math.abs(width - want.width) > BOX_TOLERANCE_PT || Math.abs(height - want.height) > BOX_TOLERANCE_PT) {
+      throw new Error(
+        `${file} is ${width.toFixed(1)}x${height.toFixed(1)}pt, expected ` +
+          `${want.width.toFixed(1)}x${want.height.toFixed(1)}pt for a ${expect.w}x${expect.h} canvas. ` +
+          'The @page rule did not take, so the figure was laid out on a default paper size.',
+      )
+    }
+  }
+  return { width, height, pages: 1 }
+}
