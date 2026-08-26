@@ -6,8 +6,8 @@
 
 **Your coding agent cannot draw.** This [Agent Skill](https://agentskills.io) fixes that —
 diagrams, presentation slides, social cards, code snippets and device mockups, authored as
-HTML/SVG and rendered to crisp PNGs by the headless Chromium you already have. No design tool,
-no API, no npm dependencies.
+HTML/SVG and rendered to crisp PNGs by the headless Chromium you already have. Hand it mermaid
+and it lays the flowchart out for itself. No design tool, no API, no npm dependencies.
 
 | | | |
 | --- | --- | --- |
@@ -66,11 +66,19 @@ line numbers, a highlight line and diff rows, in any of the eight themes:
 
 ![code snippet, ember theme](previews/code-ember.png)
 
+**Mermaid needs no drawing at all.** Paste a flowchart and a deterministic layout engine
+turns it into a figure — ranks, one lane per elbow, bridged crossings, subgraph boundaries
+and return paths, on a canvas sized to whatever it needed. The image below is fourteen lines
+of mermaid and one command:
+
+![mermaid flowchart, frost theme](previews/flowchart-frost.png)
+
 ## Capabilities
 
 | | |
 | --- | --- |
 | **Diagrams** | Architecture and flow figures — nodes, labelled arrows, return paths, bridged line crossings. 1360×740 |
+| **Mermaid flowcharts** | Paste `flowchart TD` and a deterministic engine lays it out — every shape and link kind, subgraphs, decisions, retry loops. Syntax it does not implement is refused, never silently dropped |
 | **Presentation slides** | Kicker, gradient headline, up to three points, footer. 1920×1080; a deck is one file per slide |
 | **Social / og cards** | Mark, headline, one-paragraph pitch, chips. 1200×630 |
 | **Code snippets** | Carbon-style window, hand-highlighted against a fixed token→accent mapping, line numbers, a highlight line, diff rows |
@@ -160,6 +168,7 @@ Just ask for a visual:
 - *"turn these notes into a 6-slide deck, paper theme"*
 - *"an og card for this repo"*
 - *"put this screenshot in a browser frame"*
+- *"render this mermaid flowchart"* — pasted, or a `.mmd` file
 
 Or drive the renderer by hand:
 
@@ -168,6 +177,9 @@ S=~/.agents/skills/render-visual
 node $S/scripts/render.mjs  $S/templates/diagram.html  figure.png   --theme slate
 node $S/scripts/render.mjs  $S/templates/code.html     snippet.png  --theme paper --transparent
 node $S/scripts/animate.mjs $S/templates/sequence.html sequence.gif --theme ember
+
+node $S/scripts/mermaid.mjs  flow.mmd  flow.html  --theme frost   # mermaid -> a themed page
+node $S/scripts/render.mjs   flow.html flow.png   --theme frost   # ...then the usual shot
 ```
 
 The canvas size comes from the template's `<body>`; `--scale` defaults to 2 (retina).
@@ -292,6 +304,29 @@ node $S/scripts/render.mjs <input.html> <output.png> [flags]
 | `--size` | the `<body>` | `WxH` override, e.g. `1200x630` |
 | `--transparent` | off | Real alpha channel: ground and furniture stripped |
 
+### `mermaid.mjs` — mermaid flowchart text → a themed page
+
+```sh
+node $S/scripts/mermaid.mjs <input.mmd|-> <output.html> [flags]
+```
+
+Generates; it does not render. The page it writes is ordinary themed SVG, so a label can be
+reworded before `render.mjs` takes the shot, and the same file re-renders in any theme. `-`
+reads the source from stdin.
+
+| Flag | Default | |
+| --- | --- | --- |
+| `--theme` | `ember` | Which theme the generated page links; `render.mjs --theme` still overrides at shot time |
+| `--direction` | the source's | `TD` · `TB` · `BT` · `LR` · `RL` |
+| `--title` `--kicker` `--note` | none | Header and footnote, all sized into the canvas |
+| `--template` | `templates/flowchart.html` | A different shell; needs the `FLOW:BEGIN`/`FLOW:END` markers |
+
+Supported: every bracket shape, `-->` `---` `-.->` `==>` `--o` `--x` `<-->` with either label
+form, chains, `A & B --> C`, `subgraph`, `classDef`/`class`/`:::`, `%%` comments and `---`
+front matter. Anything else — `style`, `linkStyle`, `click`, nested subgraphs, another
+diagram kind — is fatal with the line quoted, because a statement silently dropped is a step
+missing from the flowchart in a PNG that renders perfectly.
+
 ### `animate.mjs` — a looping GIF
 
 ```sh
@@ -319,7 +354,7 @@ that up:
 
 ```sh
 node $S/scripts/doctor.mjs --prune   # reap orphans, clear stale locks, reclaim profile disk
-node $S/scripts/selftest.mjs         # ~2m: assert all 22 concurrency and output invariants
+node $S/scripts/selftest.mjs         # ~2m: assert all 29 concurrency and output invariants
 ```
 
 Reach for `doctor.mjs` when a render fails with *"is another instance using profile"*.
@@ -331,13 +366,15 @@ skills/render-visual/       the skill — this directory is what gets installed
   SKILL.md                  workflow, aesthetic rules, layout discipline
   templates/                diagram · swimlane · tree · cluster · deployment ·
                             mindmap · sequence (animatable) · code — all 1360×740
-                            slide 1920×1080 · card 1200×630
-                            elements + charts (parts sheets) · palette (theme specimen)
+                            slide 1920×1080 · card 1200×630 · flowchart (generated,
+                            canvas computed) · elements + charts (parts sheets) ·
+                            palette (theme specimen)
   parts/                    57 includable elements — frames, shapes, charts,
                             BI furniture, glyphs
   themes/                   ember · slate · paper · terminal · blueprint · frost
                             neon · sepia  (design tokens, swappable)
-  scripts/                  render.mjs (PNG) · animate.mjs (GIF) · gif.mjs (GIF89a encoder)
+  scripts/                  render.mjs (PNG/JPEG/PDF) · animate.mjs (GIF) · gif.mjs (GIF89a)
+                            mermaid.mjs (mermaid parser + layout engine)
                             chrome.mjs (profiles, reaping, guards) · cli.mjs · doctor.mjs
                             parts.mjs (element includes) · images.mjs (image includes)
                             markup.mjs · selftest.mjs
