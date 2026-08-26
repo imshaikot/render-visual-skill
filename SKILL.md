@@ -1,6 +1,6 @@
 ---
 name: render-visual
-description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs, JPEGs or PDFs by authoring HTML/SVG and rendering it with a local headless Chromium. Eight built-in themes (ember, slate, paper, terminal, blueprint, frost, neon, sepia), swappable with a flag. Also frames your own screenshots and photos in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: diagram, flow chart, architecture visual, swimlane, tree view, cluster, deployment, mind map, slide, slide deck, presentation, og card, social card, banner, blog figure, screenshot in a browser frame, device mockup, render a png, export a pdf or jpeg, make an image, visual."
+description: "**DELIVERY SKILL** — Produce polished diagrams, presentation slides, and social cards as crisp PNGs, JPEGs or PDFs by authoring HTML/SVG and rendering it with a local headless Chromium. Eight built-in themes (ember, slate, paper, terminal, blueprint, frost, neon, sepia), swappable with a flag. Turns mermaid flowchart text into a laid-out figure with a deterministic engine — no hand-drawing. Also frames your own screenshots and photos in a browser, phone or terminal frame, or cropped to a shape. USE FOR: architecture and flow diagrams, slide decks, og/social cards, blog and README figures, any designed image a document needs. DO NOT USE FOR: data charts from datasets (use a plotting library), capturing a live UI, photo retouching, or any surface where you cannot run shell commands — write inline SVG instead. TRIGGERS: mermaid, mermaid flowchart, graph TD, flowchart TD, render this mermaid, diagram, flow chart, architecture visual, swimlane, tree view, cluster, deployment, mind map, slide, slide deck, presentation, og card, social card, banner, blog figure, screenshot in a browser frame, device mockup, render a png, export a pdf or jpeg, make an image, visual."
 license: MIT
 compatibility: "Requires shell command execution, Node 18+, and a local Chromium-based browser (Chrome, Chromium, Brave, or Edge); set CHROME_PATH if it is installed somewhere unusual. Theme fonts load from fonts.googleapis.com, so renders without network access fall back to system fonts. Cannot run where there is no shell or no browser: claude.ai chat, the Skills API, Cowork and cloud sessions, and most CI images."
 metadata:
@@ -23,6 +23,7 @@ file instead of hand-picked colors.
 | `$SKILL/templates/tree.html` | 1360×740 | Hierarchies, both idioms: an indented tree view (files, nav, an outline) beside the same tree drawn node-link |
 | `$SKILL/templates/cluster.html` | 1360×740 | What runs inside a boundary: control plane, worker nodes, pods, and the state that outlives a rebuild |
 | `$SKILL/templates/deployment.html` | 1360×740 | Which artifact lands on which machine, over which protocol: `el-cube` nodes, «stereotypes», artifact chips — see §5 |
+| `$SKILL/templates/flowchart.html` | computed | **Mermaid flowcharts.** A vertically long process chart — decisions, branch labels, subgraph boundaries, retry loops. Never hand-authored: `scripts/mermaid.mjs` generates it from mermaid text — see §10 |
 | `$SKILL/templates/mindmap.html` | 1360×740 | A question in the middle and the answers around it: six branches, two leaves each, one branch emphasised |
 | `$SKILL/templates/code.html` | 1360×740 | Code snippets in a themed window (Carbon-style): hand-highlighted tokens, line numbers, a highlight line, diff rows — see §7 |
 | `$SKILL/templates/charts.html` | parts sheet | Browsable catalogue of the chart and BI parts — pie, donut, bar, line, area, stacked, scatter, funnel, gauge, heatmap, sparkline, KPI tile, table, dashboard. Schematic figures, not plotted data — see §5 |
@@ -78,7 +79,8 @@ Nothing here needs the working directory to be the skill. Outputs go wherever yo
    - **Template.** Read the task against the template table's "For" column and shortlist
      what fits. A request that names one — "a swimlane", "an og card" — is the answer.
      One clear match: take it and say which in the handoff. Several plausible: ask,
-     naming the shortlist and what each would emphasise.
+     naming the shortlist and what each would emphasise. **Mermaid flowchart text settles
+     this on its own**: generate it, do not pick a template and draw it by hand — §10.
 
    - **Format.** PNG, JPEG or PDF. A request that names one — "as a PDF", "make it a
      jpg" — is the answer, and so is an output path that already ends in `.pdf` or
@@ -499,12 +501,78 @@ Keep one theme per deck. The footer's `NN / NN` is manual — update it per slid
 single file, combine the PNGs into a PDF with whatever the machine has
 (`magick out/*.png deck.pdf`, or print the folder from any viewer).
 
-## 10. QA checklist
+## 10. Mermaid flowcharts — generated, not drawn
+
+**If the flow arrives as mermaid, do not translate it by hand.** A fenced ` ```mermaid `
+block, a `.mmd` file, or any text opening `flowchart TD` / `graph LR` is the trigger, and
+`$SKILL/scripts/mermaid.mjs` turns it into a laid-out page. Transcribing one into SVG
+yourself is slow, and it silently loses steps — which is a flowchart missing a box, in a PNG
+that renders perfectly.
+
+```bash
+node "$SKILL/scripts/mermaid.mjs" flow.mmd flow.html --theme slate \
+     --title "How a request is served" --kicker "edge tier" --note "One sentence of context."
+node "$SKILL/scripts/render.mjs"  flow.html flow.png --theme slate
+```
+
+`-` reads the source from stdin, so pasted text needs no file:
+
+```bash
+printf 'flowchart TD\n  A[Start] --> B{Ready?}\n  B -->|yes| C([Ship])\n' \
+  | node "$SKILL/scripts/mermaid.mjs" - flow.html --theme ember
+```
+
+**Two steps, not one, and the middle file is the point.** `flow.html` is ordinary themed
+SVG built from `$SKILL/templates/flowchart.html` — so reword a label, nudge a node, or drop
+in a `data-part` glyph before the shot, and re-render it in any theme with `--theme`. The
+generator prints the exact render command to run next.
+
+**What it draws.** The flowchart subset of mermaid, and only that:
+
+| | |
+|---|---|
+| Shapes | `A[rect]` `A(round)` `A([stadium])` `A[[subroutine]]` `A[(cylinder)]` `A((circle))` `A(((double)))` `A{decision}` `A{{hexagon}}` `A[/lean/]` `A[\lean\]` `A[/trapezoid\]` `A[\trap alt/]` `A>flag]` |
+| Links | `-->` `---` `-.->` `==>` `--o` `--x` `<-->`, labelled as `-->\|text\|` or `-- text -->` |
+| Statements | chains `A --> B --> C`, fan-out `A & B --> C`, `subgraph … end`, `classDef`, `class`, `:::name`, `%%` comments, `---` front matter (its `title:` becomes the figure's) |
+| Directions | `TD` `TB` `BT` `LR` `RL`, overridable with `--direction` |
+| Labels | `<br/>` breaks a line; anything longer wraps by itself |
+
+**What it decides for you**, so the figure obeys §4 without your help:
+
+- **Layout** is layered — ranks down the flow axis, barycentre ordering across it, one lane
+  per elbow so two turns in the same gap never draw as one line, and a bridge wherever one
+  edge crosses another (§8). Long edges route through their own channel rather than over whatever is
+  underneath. A cycle becomes a **return path** down the nearer side of the figure.
+- **Accents** carry meaning, never variety: `--a1` the main line, `--a2` returns and loops,
+  `--a3` the branches off the main line, `--a4` where the flow stops. Where a decision
+  splits, the branch continuing down the longest remaining path keeps `--a1`. A `classDef`
+  takes an accent in declaration order — printed, so you can see which — and a class named
+  `a1`…`a4` takes the one it names. **Five classes is fatal**: there are four accents, and a
+  fifth would merge two things the source draws apart.
+- **The canvas** is computed from the geometry, including the header, the footnote and the
+  return channels — so a TD chart comes out tall and narrow, which is what it should be.
+
+**What it refuses**, loudly and before writing anything: another mermaid diagram kind
+(sequence, class, state, gantt, ER, pie — for sequence diagrams use §3), `style` and
+`linkStyle` (colour is the theme's, §4), `click`, nested subgraphs, a per-subgraph
+`direction`, the `A@{ shape: … }` syntax, unpaired brackets, and a fifth class. Every message
+quotes the line and names what to write instead. Unimplemented syntax is never skipped: a
+dropped statement is a step missing from the picture, and nothing downstream can see it.
+
+| Flag | |
+|---|---|
+| `--theme name` | which theme the generated page links (default `ember`); `render.mjs --theme` still overrides at shot time |
+| `--direction TD\|TB\|BT\|LR\|RL` | override the direction in the source |
+| `--title` `--kicker` `--note` | the header and the footnote — all optional, all sized into the canvas |
+| `--template file` | a different shell; it needs the `FLOW:BEGIN`/`FLOW:END` markers and every class the generator emits |
+
+## 11. QA checklist
 
 Before delivering any image:
 
 - [ ] Rendered and **viewed** — not assumed
 - [ ] Code figures: highlighting spot-checked token by token; at most one `.hl` line
+- [ ] Mermaid figures: generated, never transcribed — and every node in the source is on the page
 - [ ] Images: the file the log named is the one you meant, and the crop kept the point
 - [ ] Transparent renders: viewed composited over a sample background, not just alone
 - [ ] No text touches a node edge, a line, or the canvas edge
