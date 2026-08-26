@@ -354,7 +354,7 @@ that up:
 
 ```sh
 node $S/scripts/doctor.mjs --prune   # reap orphans, clear stale locks, reclaim profile disk
-node $S/scripts/selftest.mjs         # ~2m: assert all 29 concurrency and output invariants
+node $S/scripts/selftest.mjs         # ~2m: assert all 30 concurrency and output invariants
 ```
 
 Reach for `doctor.mjs` when a render fails with *"is another instance using profile"*.

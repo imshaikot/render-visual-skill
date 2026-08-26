@@ -15,7 +15,7 @@
 
 import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -871,6 +871,35 @@ await test('mermaid this engine does not implement is refused, never half-drawn'
   }
   assert(isoChromes().length === 0, 'Chrome was launched for input that could never be drawn')
 })
+
+// The link is made before the test, so "symlinks cannot be created here" can be
+// declared as a skip through the harness rather than faked from inside a test.
+const linkedSkill = join(root, 'linked-skill')
+let linkError = null
+try {
+  symlinkSync(SKILL_DIR, linkedSkill, WIN ? 'junction' : 'dir')
+} catch (err) {
+  linkError = err.code ?? err.message
+}
+
+await test('the generator still runs when it is reached through a symlink', async () => {
+  // Node reports import.meta.url as the real path and process.argv[1] as the
+  // path that was typed, so an entry-point guard comparing them raw is defeated
+  // by any symlink on the way in — /tmp and /var on macOS, and the symlinked
+  // dev install cli.mjs supports on purpose. The command then exits 0 having
+  // printed nothing and written nothing, which no other guard can catch: there
+  // is no bad output to inspect, only no output at all.
+  writeFileSync(join(work, 'link.mmd'), 'flowchart TD\n  A[One] --> B[Two]\n')
+  const r = spawnSync(
+    process.execPath,
+    [join(linkedSkill, 'scripts', 'mermaid.mjs'), 'link.mmd', 'linked.html', '--theme', 'slate'],
+    { cwd: work, env, encoding: 'utf8' },
+  )
+  assert(r.status === 0, `exit ${r.status}: ${r.stderr.trim() || '(silent)'}`)
+  // The exit code proves nothing here: the defect this covers exits 0.
+  assert(/^wrote linked\.html \(/m.test(r.stdout), `it exited 0 and reported nothing: ${JSON.stringify(r.stdout)}`)
+  assert(existsSync(join(work, 'linked.html')), 'it exited 0 without writing a page')
+}, { skip: linkError ? `symlinks cannot be created here (${linkError})` : null })
 
 /* ───────────────────────────────────────────────────────────────────────── */
 
