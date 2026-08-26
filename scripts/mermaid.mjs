@@ -21,7 +21,7 @@
 // dropped statement is a flowchart that is missing a step and screenshots
 // perfectly. Nothing here ever guesses.
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { SKILL_ROOT, TEMPLATES_DIR, THEMES_DIR, distance, fail, parseArgs, resolveTheme } from './cli.mjs'
@@ -1320,8 +1320,28 @@ export function fillTemplate(template, { svg, width, height }, themeHref) {
 const USAGE =
   'mermaid.mjs <input.mmd|-> <output.html> [--theme name] [--direction TD|LR] [--title "..."] [--kicker "..."] [--note "..."] [--template file]'
 
+/**
+ * Was this file run, rather than imported?
+ *
+ * Both sides are resolved through symlinks before they are compared. Node gives
+ * `import.meta.url` as the real path but leaves `process.argv[1]` exactly as it
+ * was typed, so on macOS a skill under /tmp or /var — or any symlinked install,
+ * which cli.mjs supports on purpose — makes the two disagree. The comparison
+ * then fails, the block below never runs, and the command exits 0 having
+ * printed nothing and written nothing, which is the one outcome this pipeline
+ * refuses. T30 invokes this file through a symlink for exactly that reason.
+ */
+function runAsCommand() {
+  if (!process.argv[1]) return false
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href
+  } catch {
+    return false // argv[1] does not exist on disk, so it did not start this module
+  }
+}
+
 // Importable as a module (the invariant suite does), executable as a command.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (runAsCommand()) {
   const cli = parseArgs({ usage: USAGE, bool: [], value: ['theme', 'direction', 'title', 'kicker', 'note', 'template'] })
   const [input, output] = cli.positional
   if (!input || !output) fail('Both a mermaid source (or -) and an output .html are required.', USAGE)
