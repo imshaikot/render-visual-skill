@@ -747,6 +747,131 @@ await test('every theme declares the same tokens, alpha components included', as
   }
 })
 
+/* ── mermaid flowcharts ──────────────────────────────────────────────────── */
+
+// The defect this section exists for is a statement that goes in and does not
+// come out: a node the parser skipped is a step missing from the flowchart, and
+// the page around it still lays out and screenshots perfectly. So the assertion
+// is never "generation succeeded" — it is "that label is in the markup, that
+// many edges were drawn, and it renders at the size it claimed".
+
+const MERMAID = join(SCRIPTS, 'mermaid.mjs')
+const mermaid = (...args) => spawnSync(process.execPath, [MERMAID, ...args], { cwd: work, env, encoding: 'utf8' })
+
+// Every shape, both label forms, a chain, an `&` fan-out, a subgraph, a class,
+// a return edge and a self loop — one source, so a regression in any of them
+// fails here rather than in whichever figure someone happens to draw next.
+const MMD = [
+  'flowchart TD',
+  '  Start([Ingest]) --> Check{Well formed?}',
+  '  Check -->|no| Reject[/Reject and log/]',
+  '  Check -- yes --> Norm[[Normalise]]',
+  '  Norm --> Store[(Warehouse)] & Index[(Search index)]',
+  '  subgraph serving [read path]',
+  '    Store --> Api[Query API]',
+  '    Index --> Api',
+  '  end',
+  '  Api --> Cache((Edge cache))',
+  '  Cache -.-> Client[\\Client\\]',
+  '  Client ==> Client',
+  '  Reject --> Start',
+  '  classDef risky stroke-dasharray:3',
+  '  class Reject risky',
+].join('\n')
+const MMD_LABELS = ['Ingest', 'Well formed?', 'Reject and log', 'Normalise', 'Warehouse', 'Search index', 'Query API', 'Edge cache', 'Client']
+const MMD_EDGES = 11
+
+await test('mermaid text becomes a figure with every node and edge in it', async () => {
+  writeFileSync(join(work, 'flow.mmd'), MMD)
+  const r = mermaid('flow.mmd', 'flow.html', '--theme', 'slate', '--kicker', 'pipeline', '--note', 'One source of truth.')
+  assert(r.status === 0, `exit ${r.status}: ${r.stderr.trim()}`)
+  const html = readFileSync(join(work, 'flow.html'), 'utf8')
+
+  for (const label of MMD_LABELS) {
+    // The rendered text, not the id: an id surviving into the markup while its
+    // label was dropped is exactly the failure this is here to catch.
+    assert(html.includes(`>${label}</text>`), `no node label "${label}" reached the markup`)
+  }
+  const drawn = (html.match(/class="edge\b/g) ?? []).length
+  assert(drawn === MMD_EDGES, `${MMD_EDGES} edges in the source, ${drawn} drawn`)
+  assert(/class="grouparea"/.test(html) && html.includes('>READ PATH<'), 'the subgraph was not drawn')
+
+  // The log has to tell the truth about the file it wrote, because the canvas
+  // is computed and nothing downstream re-derives it.
+  const said = /wrote flow\.html \((\d+)x(\d+),/.exec(r.stdout)
+  assert(said, `the generator did not report a canvas size: ${r.stdout.trim()}`)
+  const [w, h] = [Number(said[1]), Number(said[2])]
+  assert(new RegExp(`width:\\s*${w}px;\\s*height:\\s*${h}px`).test(html), 'the body does not declare the size that was reported')
+  assert(html.includes(`<svg width="${w}" height="${h}"`), 'the svg does not carry the size that was reported')
+
+  // Same input, same file — the layout may never depend on iteration order.
+  const again = mermaid('flow.mmd', 'flow2.html', '--theme', 'slate', '--kicker', 'pipeline', '--note', 'One source of truth.')
+  assert(again.status === 0, `second run: ${again.stderr.trim()}`)
+  assert(
+    readFileSync(join(work, 'flow2.html'), 'utf8').replace('flow2', 'flow') === html.replace('flow2', 'flow'),
+    'two runs over one source produced different markup',
+  )
+
+  const shot = render('flow.html', 'flow.png', '--theme', 'slate', '--scale', '1')
+  assert(shot.status === 0, `render exit ${shot.status}: ${shot.stderr.trim()}`)
+  assertPng(join(work, 'flow.png'), { w, h })
+})
+
+await test('generated markup the template cannot colour is refused before Chrome starts', async () => {
+  // The mirror of T18's missing-part-CSS case. The generator places geometry and
+  // the template colours it; they meet only through class names, so a rule the
+  // template has lost paints invisible lines on an otherwise perfect figure.
+  const tpl = readFileSync(join(SKILL_DIR, 'templates', 'flowchart.html'), 'utf8')
+  assert(/\.chip\s*\{/.test(tpl), 'the shipped template lost .chip, so this test would pass vacuously')
+  writeFileSync(join(work, 'notpl.html'), tpl.replace(/\.chip\s*\{[^}]*\}/, ''))
+  writeFileSync(join(work, 'lbl.mmd'), 'flowchart TD\n  A[One] -->|labelled| B[Two]\n')
+  const started = Date.now()
+  const r = mermaid('lbl.mmd', 'nocolour.html', '--template', 'notpl.html')
+  assert(r.status !== 0, 'a template with no rule for .chip was used anyway')
+  assert(/defines no CSS for \.chip/.test(r.stderr), `unexpected message: ${r.stderr.trim()}`)
+  assert(!existsSync(join(work, 'nocolour.html')), 'a page was written anyway')
+  assert(Date.now() - started < 3000, 'the check ran too late to have preceded a render')
+  assert(isoChromes().length === 0, 'Chrome was launched by the generator')
+})
+
+await test('mermaid this engine does not implement is refused, never half-drawn', async () => {
+  const cases = [
+    ['another diagram kind', 'sequenceDiagram\n  A->>B: hi\n', /does not look like a mermaid flowchart/],
+    ['no header', 'A[One] --> B[Two]\n', /does not look like a mermaid flowchart/],
+    ['unknown direction', 'flowchart XY\n  A --> B\n', /Unknown direction/],
+    ['a style line', 'flowchart TD\n  A --> B\n  style A fill:#f00\n', /"style" is not implemented/],
+    ['a click handler', 'flowchart TD\n  A --> B\n  click A "https://x"\n', /"click" is not implemented/],
+    ['nested subgraphs', 'flowchart TD\n  subgraph a\n    subgraph b\n      X\n    end\n  end\n', /Nested subgraphs/],
+    ['an unclosed subgraph', 'flowchart TD\n  subgraph a\n    X --> Y\n', /never closed/],
+    ['a fifth class', 'flowchart TD\n  A:::w --> B:::x --> C:::y --> D:::z --> E:::v\n', /only four accents/],
+    ['unpaired brackets', 'flowchart TD\n  A[Broken --> B\n', /brackets do not pair up/],
+    ['the @{} node syntax', 'flowchart TD\n  A@{ shape: rect } --> B\n', /not implemented/],
+    ['a subgraph with no nodes', 'flowchart TD\n  A --> g\n  subgraph g\n  end\n', /holds no nodes/],
+    ['an id that is both', 'flowchart TD\n  g[Node] --> B\n  subgraph g\n    B\n  end\n', /both a subgraph and a node/],
+  ]
+  for (const [label, src, pattern] of cases) {
+    writeFileSync(join(work, 'bad.mmd'), src)
+    const r = mermaid('bad.mmd', 'bad.html', '--theme', 'slate')
+    assert(r.status !== 0, `${label} was accepted`)
+    assert(pattern.test(r.stderr), `${label}: unexpected message: ${r.stderr.trim()}`)
+    assert(!existsSync(join(work, 'bad.html')), `${label} wrote a page anyway`)
+  }
+  // And the flags, which never reach the parser at all.
+  writeFileSync(join(work, 'ok.mmd'), 'flowchart TD\n  A --> B\n')
+  for (const [args, pattern] of [
+    [['ok.mmd', 'out.png'], /Output must be an \.html file/],
+    [['ok.mmd', 'out.html', '--theme', 'slat'], /Unknown theme/],
+    [['ok.mmd', 'out.html', '--direction', 'sideways'], /--direction must be one of/],
+    [['ok.mmd', 'out.html', '--thme', 'slate'], /Did you mean --theme/],
+    [['missing.mmd', 'out.html'], /Input not found/],
+  ]) {
+    const r = mermaid(...args)
+    assert(r.status !== 0, `${args.join(' ')} was accepted`)
+    assert(pattern.test(r.stderr), `${args.join(' ')}: unexpected message: ${r.stderr.trim()}`)
+  }
+  assert(isoChromes().length === 0, 'Chrome was launched for input that could never be drawn')
+})
+
 /* ───────────────────────────────────────────────────────────────────────── */
 
 const failed = results.filter((r) => !r.ok)
